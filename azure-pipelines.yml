@@ -15,7 +15,7 @@ resources:
   repositories:
     - repository: frontend
       type: github
-      name: CoffeeAndChill-Frontend
+      name: Cr1ss4nB/CoffeeAndChill-Frontend.git
       endpoint: github
       ref: main
 
