@@ -1,0 +1,97 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- main
+- develop
+
+pr:
+- main
+- develop
+
+resources:
+  repositories:
+    - repository: frontend
+      type: github
+      name: CoffeeAndChill-Frontend
+      endpoint: github
+      ref: main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  NODE_VERSION: '18.x'
+  MAVEN_CACHE_FOLDER: $(Pipeline.Workspace)/.m2/repository
+
+steps:
+
+# checkout backend
+- checkout: self
+
+# checkout frontend
+- checkout: frontend
+
+############################
+# BACKEND
+############################
+
+- task: Cache@2
+  displayName: Cache Maven dependencies
+  inputs:
+    key: 'maven | "$(Agent.OS)" | **/pom.xml'
+    restoreKeys: |
+       maven | "$(Agent.OS)"
+    path: $(MAVEN_CACHE_FOLDER)
+
+- task: Maven@3
+  displayName: Run Backend Tests
+  inputs:
+    mavenPomFile: 'backend/pom.xml'
+    goals: 'clean test'
+    options: '-Dmaven.repo.local=$(MAVEN_CACHE_FOLDER)'
+
+############################
+# FRONTEND
+############################
+
+- task: NodeTool@0
+  displayName: Install Node
+  inputs:
+    versionSpec: $(NODE_VERSION)
+
+- task: Cache@2
+  displayName: Cache npm
+  inputs:
+    key: 'npm | "$(Agent.OS)" | frontend/package-lock.json'
+    restoreKeys: |
+      npm | "$(Agent.OS)"
+    path: frontend/node_modules
+
+- script: |
+    cd CoffeeAndChill-Frontend
+    npm install
+  displayName: Install frontend dependencies
+
+- script: |
+    cd CoffeeAndChill-Frontend
+    npm run test
+  displayName: Run frontend tests
+
+- script: |
+    cd CoffeeAndChill-Frontend
+    npm run build
+  displayName: Build frontend
+
+############################
+# BACKEND BUILD
+############################
+
+- task: Maven@3
+  displayName: Build Backend
+  inputs:
+    mavenPomFile: 'backend/pom.xml'
+    goals: 'package'
+    options: '-Dmaven.repo.local=$(MAVEN_CACHE_FOLDER)'
