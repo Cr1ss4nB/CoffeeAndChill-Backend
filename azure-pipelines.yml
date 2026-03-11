@@ -14,84 +14,30 @@ pr:
 resources:
   repositories:
     - repository: frontend
-      type: github
-      name: Cr1ss4nB/CoffeeAndChill-Frontend.git
-      endpoint: github
-      ref: main
+      type: git
+      name: frontend-coffe-and-chill
 
 pool:
   vmImage: 'ubuntu-latest'
 
-variables:
-  NODE_VERSION: '18.x'
-  MAVEN_CACHE_FOLDER: $(Pipeline.Workspace)/.m2/repository
-
 steps:
 
-# checkout backend
 - checkout: self
-
-# checkout frontend
 - checkout: frontend
 
-############################
-# BACKEND
-############################
-
-- task: Cache@2
-  displayName: Cache Maven dependencies
-  inputs:
-    key: 'maven | "$(Agent.OS)" | **/pom.xml'
-    restoreKeys: |
-       maven | "$(Agent.OS)"
-    path: $(MAVEN_CACHE_FOLDER)
-
+# Backend tests
 - task: Maven@3
-  displayName: Run Backend Tests
   inputs:
     mavenPomFile: 'backend/pom.xml'
     goals: 'clean test'
-    options: '-Dmaven.repo.local=$(MAVEN_CACHE_FOLDER)'
 
-############################
-# FRONTEND
-############################
-
+# Node install
 - task: NodeTool@0
-  displayName: Install Node
   inputs:
-    versionSpec: $(NODE_VERSION)
+    versionSpec: '18.x'
 
-- task: Cache@2
-  displayName: Cache npm
-  inputs:
-    key: 'npm | "$(Agent.OS)" | frontend/package-lock.json'
-    restoreKeys: |
-      npm | "$(Agent.OS)"
-    path: frontend/node_modules
-
+# Frontend tests
 - script: |
-    cd CoffeeAndChill-Frontend
+    cd frontend
     npm install
-  displayName: Install frontend dependencies
-
-- script: |
-    cd CoffeeAndChill-Frontend
-    npm run test
-  displayName: Run frontend tests
-
-- script: |
-    cd CoffeeAndChill-Frontend
-    npm run build
-  displayName: Build frontend
-
-############################
-# BACKEND BUILD
-############################
-
-- task: Maven@3
-  displayName: Build Backend
-  inputs:
-    mavenPomFile: 'backend/pom.xml'
-    goals: 'package'
-    options: '-Dmaven.repo.local=$(MAVEN_CACHE_FOLDER)'
+    npm test
