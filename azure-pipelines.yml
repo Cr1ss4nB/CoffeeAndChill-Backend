@@ -1,0 +1,51 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- main
+- develop
+
+pr:
+- main
+- develop
+
+resources:
+  repositories:
+    - repository: frontend
+      type: git
+      name: frontend-coffe-and-chill
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+
+- checkout: self
+  displayName: "Checkout backend repository"
+
+- checkout: frontend
+  displayName: "Checkout frontend repository"
+
+- script: |
+    echo "Listing backend repository files:"
+    ls -R
+  displayName: "Inspect backend repository"
+
+- task: NodeTool@0
+  inputs:
+    versionSpec: '18.x'
+  displayName: "Install Node.js"
+
+- script: |
+    echo "Frontend project not implemented yet"
+  displayName: "Frontend placeholder step"
+
+- script: |
+    echo "Backend project not implemented yet"
+  displayName: "Backend placeholder step"
+
+- script: |
+    echo "CI pipeline executed successfully"
+  displayName: "Pipeline success message"
