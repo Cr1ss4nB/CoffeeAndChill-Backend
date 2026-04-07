@@ -1,6 +1,7 @@
 from datetime import datetime, date
-from typing import Optional, List, Dict
-from sqlmodel import SQLModel, Field, Relationship
+from typing import Optional, List, Dict, Any
+from sqlmodel import SQLModel, Field, Relationship, Column
+from sqlalchemy import JSON
 
 class Customer(SQLModel, table=True):
     customer_id: Optional[int] = Field(default=None, primary_key=True)
@@ -46,4 +47,4 @@ class ActivityLog(SQLModel, table=True):
     related_order_id: Optional[int] = Field(default=None, foreign_key="order.order_id")
     related_payment_id: Optional[int] = Field(default=None, foreign_key="payment.payment_id")
     activity_date: datetime = Field(default_factory=datetime.utcnow)
-    metadata: Optional[Dict] = Field(default=None, sa_column_kwargs={"type": "JSON"})
+    activity_metadata: Optional[Any] = Field(default=None, sa_column=Column(JSON))

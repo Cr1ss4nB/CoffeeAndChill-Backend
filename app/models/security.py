@@ -1,14 +1,16 @@
-from datetime import datetime
-from typing import Optional, List, Dict
+﻿from datetime import datetime
+from typing import Optional, List
 from sqlmodel import SQLModel, Field, Relationship
+
 
 class Role(SQLModel, table=True):
     role_id: Optional[int] = Field(default=None, primary_key=True)
     role_name: str = Field(max_length=50, unique=True, index=True)
-    permissions: Optional[Dict] = Field(default=None, sa_column_kwargs={"type": "JSON"})
+    permissions: Optional[str] = Field(default=None)  # stored as JSON string
     created_at: datetime = Field(default_factory=datetime.utcnow)
-    
+
     users: List["SystemUser"] = Relationship(back_populates="role")
+
 
 class SystemUser(SQLModel, table=True):
     system_user_id: Optional[int] = Field(default=None, primary_key=True)
@@ -21,4 +23,4 @@ class SystemUser(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     last_login: Optional[datetime] = Field(default=None)
 
-    role: Role = Relationship(back_populates="users")
+    role: Optional[Role] = Relationship(back_populates="users")
