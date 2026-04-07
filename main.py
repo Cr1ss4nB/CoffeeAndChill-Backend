@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from app.routers import auth, catalog, orders
 
 app = FastAPI(
@@ -6,7 +7,6 @@ app = FastAPI(
     version="0.1.0",
     description="API para el sistema POS + Reservas de Coffee & Chill",
 )
-
 app.include_router(auth.router)
 app.include_router(catalog.router)
 app.include_router(orders.router)
