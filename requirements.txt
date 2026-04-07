@@ -6,6 +6,7 @@ python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
 python-multipart==0.0.9
 python-dotenv==1.0.1
+redis==5.0.4
 
 # Linting & Testing
 alembic==1.13.1
