@@ -1,5 +1,8 @@
-﻿from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlmodel import Session, select
+import redis
+import time
 
 from app.core.database import get_session
 from app.core.security import (
@@ -9,6 +12,8 @@ from app.core.security import (
 from app.models.crm import Customer
 from app.models.security import SystemUser
 from app.schemas.auth import CustomerRegister, LoginRequest, TokenResponse, UserResponse
+from app.core.redis import get_redis_client
+from app.core.dependencies import get_current_user, security
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -104,3 +109,45 @@ def login(payload: LoginRequest, session: Session = Depends(get_session)):
         refresh_token=refresh_token,
         user=_user_response(id=user_id, name=name, email=email, role=role),
     )
+
+
+# ── POST /auth/logout ──────────────────────────────────────────────────────────
+
+@router.post("/logout", status_code=status.HTTP_200_OK)
+def logout(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    redis_client: redis.Redis = Depends(get_redis_client),
+    current_user: UserResponse = Depends(get_current_user)
+):
+    """
+    Logout using Redis Blacklist. Extracts `jti` and sets it in Redis with the remaining TTL.
+    """
+    from app.core.security import decode_token
+    
+    token = credentials.credentials
+    payload = decode_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Token no válido")
+
+    jti = payload.get("jti")
+    exp = payload.get("exp")
+
+    if not jti or not exp:
+        raise HTTPException(status_code=401, detail="Token malformado")
+
+    now = int(time.time())
+    ttl = exp - now
+
+    if ttl > 0:
+        redis_client.setex(f"blacklist:{jti}", ttl, "true")
+
+    return {"message": "Sesión cerrada exitosamente"}
+
+# ── GET /auth/me ───────────────────────────────────────────────────────────────
+
+@router.get("/me", response_model=UserResponse)
+def get_me(current_user: UserResponse = Depends(get_current_user)):
+    """
+    Returns the current user session context.
+    """
+    return current_user

@@ -77,3 +77,45 @@ def test_login_nonexistent_user(client: TestClient):
         }
     )
     assert response.status_code == 401
+
+def test_get_me_success(client: TestClient, test_data):
+    # First, login to get a token
+    login_resp = client.post(
+        "/auth/login",
+        json={"email": "customer@example.com", "password": "customerpass"}
+    )
+    token = login_resp.json()["access_token"]
+
+    # Now call /auth/me
+    response = client.get(
+        "/auth/me",
+        headers={"Authorization": f"Bearer {token}"}
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["email"] == "customer@example.com"
+    assert data["role"] == "client"
+
+def test_logout_success(client: TestClient, test_data):
+    # First, login
+    login_resp = client.post(
+        "/auth/login",
+        json={"email": "admin@example.com", "password": "adminpass"}
+    )
+    token = login_resp.json()["access_token"]
+
+    # Call logout
+    response = client.post(
+        "/auth/logout",
+        headers={"Authorization": f"Bearer {token}"}
+    )
+    assert response.status_code == 200
+    assert response.json()["message"] == "Sesión cerrada exitosamente"
+
+    # Call /auth/me to verify token is now blacklisted
+    me_resp = client.get(
+        "/auth/me",
+        headers={"Authorization": f"Bearer {token}"}
+    )
+    assert me_resp.status_code == 401
+    assert "Token revocado" in me_resp.json()["detail"]
