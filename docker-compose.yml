@@ -43,6 +43,8 @@
     restart: unless-stopped
     env_file:
       - .env
+    environment:
+      FRONTEND_ORIGINS: ${FRONTEND_ORIGINS:-http://localhost,http://localhost:80,http://localhost:5173,http://127.0.0.1,http://127.0.0.1:80,http://127.0.0.1:5173}
     ports:
       - "8000:8000"
     depends_on:
@@ -52,6 +54,11 @@
         condition: service_healthy
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   frontend:
     build:
@@ -62,7 +69,8 @@
     ports:
       - "80:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     networks:
       - app-network
 
