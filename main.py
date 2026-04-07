@@ -1,5 +1,5 @@
-﻿from fastapi import FastAPI
-from app.routers import auth
+from fastapi import FastAPI
+from app.routers import auth, catalog, orders
 
 app = FastAPI(
     title="Coffee & Chill API",
@@ -8,6 +8,8 @@ app = FastAPI(
 )
 
 app.include_router(auth.router)
+app.include_router(catalog.router)
+app.include_router(orders.router)
 
 
 @app.get("/")
