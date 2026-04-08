@@ -104,7 +104,7 @@ stages:
           - script: |
               cd $(Pipeline.Workspace)/$(frontendPath)
               npm ci
-              npm run test_coverage
+              npx vitest run --coverage --reporter=verbose
             displayName: "Run vitest"
 
   # ---------------- BUILD ----------------
