@@ -2,6 +2,7 @@ from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import selectinload
+from sqlalchemy import true
 from sqlmodel import Session, select
 
 from app.core.database import get_db
@@ -20,7 +21,7 @@ def get_categories(
     """Obtiene el listado de categorías del menú y talleres."""
     stmt = select(Category)
     if active_only:
-        stmt = stmt.where(Category.is_active is True)
+        stmt = stmt.where(Category.is_active == True)
 
     categories = session.exec(stmt).all()
     return categories
