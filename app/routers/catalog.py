@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import selectinload
 from sqlmodel import Session, select
 
-from app.core.database import get_session
+from app.core.database import get_db
 from app.models.catalog import Category, Product
 from app.schemas.catalog import (CategoryResponse, ProductDetailResponse,
                                  ProductResponse)
@@ -14,7 +14,7 @@ router = APIRouter(prefix="/catalog", tags=["catalog"])
 
 @router.get("/categories", response_model=List[CategoryResponse])
 def get_categories(
-    session: Session = Depends(get_session),
+    session: Session = Depends(get_db),
     active_only: bool = Query(True, description="Filtrar solo categorías activas")
 ):
     """Obtiene el listado de categorías del menú y talleres."""
@@ -28,7 +28,7 @@ def get_categories(
 
 @router.get("/products", response_model=List[ProductResponse])
 def get_products(
-    session: Session = Depends(get_session),
+    session: Session = Depends(get_db),
     category_id: Optional[int] = Query(None, description="Filtrar por categoría"),
     active_only: bool = Query(True, description="Mostrar solo productos con status ACTIVE")
 ):
@@ -47,7 +47,7 @@ def get_products(
 @router.get("/products/{product_id}", response_model=ProductDetailResponse)
 def get_product(
     product_id: int,
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_db)
 ):
     """Obtiene el detalle completo de un producto específico, incluyendo su categoría."""
     stmt = select(Product).where(Product.product_id
