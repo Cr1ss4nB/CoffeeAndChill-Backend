@@ -4,7 +4,7 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session, SQLModel, create_engine
 from sqlmodel.pool import StaticPool
 
-from app.core.database import get_session
+from app.core.database import get_db
 from app.core.redis import get_redis_client
 from app.core.security import hash_password
 from app.models.crm import Customer
@@ -37,7 +37,7 @@ def client_fixture(session: Session):
     def get_redis_override():
         return fake_redis
 
-    app.dependency_overrides[get_session] = get_session_override
+    app.dependency_overrides[get_db] = get_session_override
     app.dependency_overrides[get_redis_client] = get_redis_override
     client = TestClient(app)
     yield client
