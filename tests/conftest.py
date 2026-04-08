@@ -39,8 +39,8 @@ def client_fixture(session: Session):
 
     app.dependency_overrides[get_db] = get_session_override
     app.dependency_overrides[get_redis_client] = get_redis_override
-    client = TestClient(app)
-    yield client
+    with TestClient(app) as client:  # 🔥 CAMBIO CLAVE
+        yield client
     app.dependency_overrides.clear()
 
 
