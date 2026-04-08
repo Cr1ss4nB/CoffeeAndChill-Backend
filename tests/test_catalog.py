@@ -1,19 +1,23 @@
 from fastapi.testclient import TestClient
 
+
 def test_get_categories_empty(client: TestClient):
     response = client.get("/catalog/categories")
     assert response.status_code == 200
     assert response.json() == []
+
 
 def test_get_products_empty(client: TestClient):
     response = client.get("/catalog/products")
     assert response.status_code == 200
     assert response.json() == []
 
+
 def test_get_product_not_found(client: TestClient):
     response = client.get("/catalog/products/999")
     assert response.status_code == 404
     assert response.json()["detail"] == "Producto no encontrado"
+
 
 def test_catalog_with_data(client: TestClient, session):
     from app.models.catalog import Category, Product

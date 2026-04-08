@@ -18,8 +18,8 @@ def get_categories(
     """Obtiene el listado de categorías del menú y talleres."""
     stmt = select(Category)
     if active_only:
-        stmt = stmt.where(Category.is_active == True)
-    
+        stmt = stmt.where(Category.is_active is True)
+
     categories = session.exec(stmt).all()
     return categories
 
@@ -32,12 +32,12 @@ def get_products(
 ):
     """Obtiene el catálogo de productos disponibles."""
     stmt = select(Product)
-    
+
     if active_only:
         stmt = stmt.where(Product.status == "ACTIVE")
     if category_id:
         stmt = stmt.where(Product.category_id == category_id)
-        
+
     products = session.exec(stmt).all()
     return products
 
@@ -50,11 +50,11 @@ def get_product(
     """Obtiene el detalle completo de un producto específico, incluyendo su categoría."""
     stmt = select(Product).where(Product.product_id == product_id).options(selectinload(Product.category))
     product = session.exec(stmt).first()
-    
+
     if not product:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Producto no encontrado"
         )
-        
+
     return product

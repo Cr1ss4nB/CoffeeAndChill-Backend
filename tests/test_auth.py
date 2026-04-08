@@ -1,5 +1,6 @@
 from fastapi.testclient import TestClient
 
+
 def test_register_success(client: TestClient, session):
     response = client.post(
         "/auth/register",
@@ -17,6 +18,7 @@ def test_register_success(client: TestClient, session):
     assert data["role"] == "client"
     assert "id" in data
 
+
 def test_register_duplicate_email(client: TestClient, test_data):
     response = client.post(
         "/auth/register",
@@ -28,6 +30,7 @@ def test_register_duplicate_email(client: TestClient, test_data):
     )
     assert response.status_code == 409
     assert "Ya existe" in response.json()["detail"]
+
 
 def test_login_success_client(client: TestClient, test_data):
     response = client.post(
@@ -44,6 +47,7 @@ def test_login_success_client(client: TestClient, test_data):
     assert data["user"]["role"] == "client"
     assert data["user"]["email"] == "customer@example.com"
 
+
 def test_login_success_admin(client: TestClient, test_data):
     response = client.post(
         "/auth/login",
@@ -58,6 +62,7 @@ def test_login_success_admin(client: TestClient, test_data):
     assert data["user"]["role"] == "admin"
     assert data["user"]["email"] == "admin@example.com"
 
+
 def test_login_invalid_credentials(client: TestClient, test_data):
     response = client.post(
         "/auth/login",
@@ -68,6 +73,7 @@ def test_login_invalid_credentials(client: TestClient, test_data):
     )
     assert response.status_code == 401
 
+
 def test_login_nonexistent_user(client: TestClient):
     response = client.post(
         "/auth/login",
@@ -77,6 +83,7 @@ def test_login_nonexistent_user(client: TestClient):
         }
     )
     assert response.status_code == 401
+
 
 def test_get_me_success(client: TestClient, test_data):
     # First, login to get a token
@@ -95,6 +102,7 @@ def test_get_me_success(client: TestClient, test_data):
     data = response.json()
     assert data["email"] == "customer@example.com"
     assert data["role"] == "client"
+
 
 def test_logout_success(client: TestClient, test_data):
     # First, login
