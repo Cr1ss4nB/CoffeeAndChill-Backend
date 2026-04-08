@@ -19,7 +19,7 @@ def test_get_product_not_found(client: TestClient):
     assert response.json()["detail"] == "Producto no encontrado"
 
 
-def test_catalog_with_data(client: TestClient, session):
+def test_catalog_with_data(client: TestClient, test_data):
     from app.models.catalog import Category, Product
     cat = Category(category_name="Cat Test", type="PRODUCT")
     session.add(cat)
