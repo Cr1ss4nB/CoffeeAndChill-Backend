@@ -146,6 +146,6 @@ stages:
               docker push $(dockerHubRepo)/$(backendImageName):latest
               docker push $(dockerHubRepo)/$(backendImageName):$(Build.BuildId)
 
-              docker push $(dockerHubRepo)/$(frontendImageName):latest
-              docker push $(dockerHubRepo)/$(frontendImageName):$(Build.BuildId)
+            #  docker push $(dockerHubRepo)/$(frontendImageName):latest
+            #  docker push $(dockerHubRepo)/$(frontendImageName):$(Build.BuildId)
             displayName: "Push images"
