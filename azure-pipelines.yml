@@ -16,7 +16,13 @@ resources:
   repositories:
     - repository: frontend
       type: git
-      name: frontend-coffe-and-chill
+      name: CoffeeAndChill-Frontend
+      trigger:
+        branches:
+          include:
+            - main
+            - develop
+            - feature/*
 
 pool:
   vmImage: 'ubuntu-latest'
