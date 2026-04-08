@@ -18,6 +18,12 @@ resources:
       type: github
       name: Cr1ss4nB/CoffeeAndChill-Frontend
       endpoint: Cr1ss4nB
+      trigger:
+        branches:
+          include:
+            - main
+            - develop
+            - feature/*
 
 pool:
   vmImage: "ubuntu-latest"
