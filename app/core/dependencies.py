@@ -13,6 +13,7 @@ from app.models.crm import Customer
 
 security = HTTPBearer()
 
+
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     session: Session = Depends(get_session),

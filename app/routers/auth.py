@@ -123,7 +123,7 @@ def logout(
     Logout using Redis Blacklist. Extracts `jti` and sets it in Redis with the remaining TTL.
     """
     from app.core.security import decode_token
-    
+
     token = credentials.credentials
     payload = decode_token(token)
     if not payload:
@@ -144,6 +144,7 @@ def logout(
     return {"message": "Sesión cerrada exitosamente"}
 
 # ── GET /auth/me ───────────────────────────────────────────────────────────────
+
 
 @router.get("/me", response_model=UserResponse)
 def get_me(current_user: UserResponse = Depends(get_current_user)):

@@ -18,6 +18,7 @@ engine = create_engine(
     poolclass=StaticPool,
 )
 
+
 @pytest.fixture(name="session")
 def session_fixture():
     SQLModel.metadata.create_all(engine)
@@ -25,12 +26,14 @@ def session_fixture():
         yield session
     SQLModel.metadata.drop_all(engine)
 
+
 @pytest.fixture(name="client")
 def client_fixture(session: Session):
     def get_session_override():
         return session
 
     fake_redis = fakeredis.FakeStrictRedis(decode_responses=True)
+
     def get_redis_override():
         return fake_redis
 
@@ -39,6 +42,7 @@ def client_fixture(session: Session):
     client = TestClient(app)
     yield client
     app.dependency_overrides.clear()
+
 
 @pytest.fixture(name="test_data")
 def test_data_fixture(session: Session):
