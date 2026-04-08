@@ -30,7 +30,7 @@ def session_fixture():
 @pytest.fixture(name="client")
 def client_fixture(session: Session):
     def get_session_override():
-        return session
+        yield session
 
     fake_redis = fakeredis.FakeRedis(decode_responses=True)
 
