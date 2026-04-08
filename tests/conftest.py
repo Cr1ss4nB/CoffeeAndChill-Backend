@@ -1,15 +1,15 @@
+import fakeredis
 import pytest
 from fastapi.testclient import TestClient
-from sqlmodel import SQLModel, Session, create_engine
+from sqlmodel import Session, SQLModel, create_engine
 from sqlmodel.pool import StaticPool
 
-from main import app
-from app.core.database import get_session
-from app.core.security import hash_password
-from app.models.security import Role, SystemUser
-from app.models.crm import Customer
+from app.core.database import get_db
 from app.core.redis import get_redis_client
-import fakeredis
+from app.core.security import hash_password
+from app.models.crm import Customer
+from app.models.security import Role, SystemUser
+from main import app
 
 # Setup in-memory sqlite for testing
 engine = create_engine(
@@ -32,15 +32,15 @@ def client_fixture(session: Session):
     def get_session_override():
         return session
 
-    fake_redis = fakeredis.FakeStrictRedis(decode_responses=True)
+    fake_redis = fakeredis.FakeRedis(decode_responses=True)
 
     def get_redis_override():
         return fake_redis
 
-    app.dependency_overrides[get_session] = get_session_override
+    app.dependency_overrides[get_db] = get_session_override
     app.dependency_overrides[get_redis_client] = get_redis_override
-    client = TestClient(app)
-    yield client
+    with TestClient(app) as client:  # 🔥 CAMBIO CLAVE
+        yield client
     app.dependency_overrides.clear()
 
 

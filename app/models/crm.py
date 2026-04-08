@@ -1,7 +1,8 @@
-from datetime import datetime, date
-from typing import Optional, List, Dict, Any
-from sqlmodel import SQLModel, Field, Relationship, Column
+from datetime import date, datetime
+from typing import Any, Dict, List, Optional
+
 from sqlalchemy import JSON
+from sqlmodel import Column, Field, Relationship, SQLModel
 
 
 class Customer(SQLModel, table=True):

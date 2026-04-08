@@ -1,6 +1,7 @@
-from datetime import datetime, date, time
-from typing import Optional, List
-from sqlmodel import SQLModel, Field, Relationship
+from datetime import date, datetime, time
+from typing import List, Optional
+
+from sqlmodel import Field, Relationship, SQLModel
 
 
 class Category(SQLModel, table=True):

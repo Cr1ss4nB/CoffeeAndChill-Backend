@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
 from app.routers import auth, catalog
 
 app = FastAPI(
@@ -11,7 +12,7 @@ app = FastAPI(
 # CORS Configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # In production, this should be specific
+    allow_origins=["*"],  # In production, this should be specific
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -19,6 +20,7 @@ app.add_middleware(
 
 app.include_router(auth.router)
 app.include_router(catalog.router)
+
 
 @app.get("/")
 async def root():

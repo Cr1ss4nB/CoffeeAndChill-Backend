@@ -1,22 +1,23 @@
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from sqlmodel import Session, select
-import redis
 from datetime import datetime, timezone
 
-from app.core.database import get_session
+import redis
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlmodel import Session, select
+
+from app.core.database import get_db
 from app.core.redis import get_redis_client
 from app.core.security import decode_token
-from app.schemas.auth import UserResponse
-from app.models.security import SystemUser
 from app.models.crm import Customer
+from app.models.security import SystemUser
+from app.schemas.auth import UserResponse
 
 security = HTTPBearer()
 
 
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    session: Session = Depends(get_session),
+    session: Session = Depends(get_db),
     redis_client: redis.Redis = Depends(get_redis_client)
 ) -> UserResponse:
     token = credentials.credentials

@@ -1,6 +1,6 @@
-from .security import Role, SystemUser
 from .catalog import Category, Product, Workshop, WorkshopSchedule
-from .operations import Order, OrderItem, Payment, Invoice
-from .infrastructure import TableZone, TableSpot
-from .crm import Customer, Notification, ActivityLog
+from .crm import ActivityLog, Customer, Notification
+from .infrastructure import TableSpot, TableZone
 from .inventory import InventoryMovement
+from .operations import Invoice, Order, OrderItem, Payment
+from .security import Role, SystemUser

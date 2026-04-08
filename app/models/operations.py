@@ -1,6 +1,7 @@
 from datetime import datetime
-from typing import Optional, List
-from sqlmodel import SQLModel, Field, Relationship
+from typing import List, Optional
+
+from sqlmodel import Field, Relationship, SQLModel
 
 
 class Order(SQLModel, table=True):
@@ -28,7 +29,8 @@ class OrderItem(SQLModel, table=True):
     order_id: int = Field(foreign_key="order.order_id")
 
     product_id: Optional[int] = Field(default=None, foreign_key="product.product_id")
-    reservation_id: Optional[int] = Field(default=None, foreign_key="workshopreservation.reservation_id")
+    reservation_id: Optional[int] = Field(
+        default=None, foreign_key="workshopreservation.reservation_id")
 
     quantity: int
     unit_price: float = Field(decimal_places=2)
