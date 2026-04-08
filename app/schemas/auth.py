@@ -1,8 +1,9 @@
-﻿from typing import Optional, Literal
+from typing import Literal, Optional
+
 from pydantic import BaseModel, EmailStr, field_validator
 
-
 # ── Register (only for clients self-registering) ──────────────────────────────
+
 
 class CustomerRegister(BaseModel):
     full_name: str

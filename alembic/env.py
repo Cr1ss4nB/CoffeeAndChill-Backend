@@ -1,11 +1,11 @@
-from logging.config import fileConfig
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
-from alembic import context
-from sqlmodel import SQLModel  # Use SQLModel metadata
 import os
-from dotenv import load_dotenv
+from logging.config import fileConfig
 
+from dotenv import load_dotenv
+from sqlalchemy import engine_from_config, pool
+from sqlmodel import SQLModel  # Use SQLModel metadata
+
+from alembic import context
 # Load models for autogenerate detection
 from app.models import *
 

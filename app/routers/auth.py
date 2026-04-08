@@ -1,19 +1,19 @@
+import time
+
+import redis
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlmodel import Session, select
-import redis
-import time
 
 from app.core.database import get_session
-from app.core.security import (
-    hash_password, verify_password,
-    create_access_token, create_refresh_token,
-)
+from app.core.dependencies import get_current_user, security
+from app.core.redis import get_redis_client
+from app.core.security import (create_access_token, create_refresh_token,
+                               hash_password, verify_password)
 from app.models.crm import Customer
 from app.models.security import SystemUser
-from app.schemas.auth import CustomerRegister, LoginRequest, TokenResponse, UserResponse
-from app.core.redis import get_redis_client
-from app.core.dependencies import get_current_user, security
+from app.schemas.auth import (CustomerRegister, LoginRequest, TokenResponse,
+                              UserResponse)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 

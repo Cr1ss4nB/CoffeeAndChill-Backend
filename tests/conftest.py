@@ -1,15 +1,15 @@
+import fakeredis
 import pytest
 from fastapi.testclient import TestClient
-from sqlmodel import SQLModel, Session, create_engine
+from sqlmodel import Session, SQLModel, create_engine
 from sqlmodel.pool import StaticPool
 
-from main import app
 from app.core.database import get_session
-from app.core.security import hash_password
-from app.models.security import Role, SystemUser
-from app.models.crm import Customer
 from app.core.redis import get_redis_client
-import fakeredis
+from app.core.security import hash_password
+from app.models.crm import Customer
+from app.models.security import Role, SystemUser
+from main import app
 
 # Setup in-memory sqlite for testing
 engine = create_engine(

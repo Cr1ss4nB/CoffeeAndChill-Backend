@@ -1,11 +1,13 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlmodel import Session, select
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import selectinload
+from sqlmodel import Session, select
 
 from app.core.database import get_session
 from app.models.catalog import Category, Product
-from app.schemas.catalog import CategoryResponse, ProductResponse, ProductDetailResponse
+from app.schemas.catalog import (CategoryResponse, ProductDetailResponse,
+                                 ProductResponse)
 
 router = APIRouter(prefix="/catalog", tags=["catalog"])
 
@@ -48,7 +50,8 @@ def get_product(
     session: Session = Depends(get_session)
 ):
     """Obtiene el detalle completo de un producto específico, incluyendo su categoría."""
-    stmt = select(Product).where(Product.product_id == product_id).options(selectinload(Product.category))
+    stmt = select(Product).where(Product.product_id
+                                 == product_id).options(selectinload(Product.category))
     product = session.exec(stmt).first()
 
     if not product:

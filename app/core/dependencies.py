@@ -1,15 +1,16 @@
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from sqlmodel import Session, select
-import redis
 from datetime import datetime, timezone
+
+import redis
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlmodel import Session, select
 
 from app.core.database import get_session
 from app.core.redis import get_redis_client
 from app.core.security import decode_token
-from app.schemas.auth import UserResponse
-from app.models.security import SystemUser
 from app.models.crm import Customer
+from app.models.security import SystemUser
+from app.schemas.auth import UserResponse
 
 security = HTTPBearer()
 
