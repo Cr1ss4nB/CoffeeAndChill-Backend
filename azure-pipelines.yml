@@ -124,9 +124,9 @@ stages:
                            -t $(dockerHubRepo)/$(backendImageName):$(Build.BuildId) \
                            $(Pipeline.Workspace)/$(backendPath)
 
-              docker build -t $(dockerHubRepo)/$(frontendImageName):latest \
-                           -t $(dockerHubRepo)/$(frontendImageName):$(Build.BuildId) \
-                           $(Pipeline.Workspace)/$(frontendPath)
+            #  docker build -t $(dockerHubRepo)/$(frontendImageName):latest \
+             #              -t $(dockerHubRepo)/$(frontendImageName):$(Build.BuildId) \
+              #             $(Pipeline.Workspace)/$(frontendPath)
             displayName: "Build Docker images"
 
   # ---------------- PUSH ----------------
