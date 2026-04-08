@@ -52,9 +52,9 @@ stages:
 
           - script: |
               cd $(Pipeline.Workspace)/$(backendPath)
-              pip install -r requirements.txt
-              pip install flake8
-              flake8 .
+              python -m pip install -r requirements.txt
+              python -m pip install flake8
+              python -m flake8 .
             displayName: "Run flake8"
 
       - job: LintFrontend
