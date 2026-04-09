@@ -1,5 +1,7 @@
-from typing import Optional, List
+from typing import List, Optional
+
 from pydantic import BaseModel
+
 
 class CategoryResponse(BaseModel):
     category_id: int
@@ -9,6 +11,7 @@ class CategoryResponse(BaseModel):
     is_active: bool
 
     model_config = {"from_attributes": True}
+
 
 class ProductResponse(BaseModel):
     product_id: int
@@ -20,6 +23,7 @@ class ProductResponse(BaseModel):
     description: Optional[str] = None
 
     model_config = {"from_attributes": True}
+
 
 class ProductDetailResponse(ProductResponse):
     category: CategoryResponse

@@ -1,19 +1,19 @@
+import time
+
+import redis
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlmodel import Session, select
-import redis
-import time
 
-from app.core.database import get_session
-from app.core.security import (
-    hash_password, verify_password,
-    create_access_token, create_refresh_token,
-)
+from app.core.database import get_db
+from app.core.dependencies import get_current_user, security
+from app.core.redis import get_redis_client
+from app.core.security import (create_access_token, create_refresh_token,
+                               hash_password, verify_password)
 from app.models.crm import Customer
 from app.models.security import SystemUser
-from app.schemas.auth import CustomerRegister, LoginRequest, TokenResponse, UserResponse
-from app.core.redis import get_redis_client
-from app.core.dependencies import get_current_user, security
+from app.schemas.auth import (CustomerRegister, LoginRequest, TokenResponse,
+                              UserResponse)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -25,7 +25,7 @@ def _user_response(id: int, name: str, email: str, role: str) -> UserResponse:
 # ── POST /auth/register ────────────────────────────────────────────────────────
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-def register(payload: CustomerRegister, session: Session = Depends(get_session)):
+def register(payload: CustomerRegister, session: Session = Depends(get_db)):
     """Register a new client account."""
     existing = session.exec(
         select(Customer).where(Customer.email == payload.email)
@@ -58,7 +58,7 @@ def register(payload: CustomerRegister, session: Session = Depends(get_session))
 # ── POST /auth/login ───────────────────────────────────────────────────────────
 
 @router.post("/login", response_model=TokenResponse)
-def login(payload: LoginRequest, session: Session = Depends(get_session)):
+def login(payload: LoginRequest, session: Session = Depends(get_db)):
     """
     Unified login. Checks system_user (admin/employee) first, then customer.
     Returns JWT access + refresh tokens.
@@ -123,7 +123,7 @@ def logout(
     Logout using Redis Blacklist. Extracts `jti` and sets it in Redis with the remaining TTL.
     """
     from app.core.security import decode_token
-    
+
     token = credentials.credentials
     payload = decode_token(token)
     if not payload:
@@ -144,6 +144,7 @@ def logout(
     return {"message": "Sesión cerrada exitosamente"}
 
 # ── GET /auth/me ───────────────────────────────────────────────────────────────
+
 
 @router.get("/me", response_model=UserResponse)
 def get_me(current_user: UserResponse = Depends(get_current_user)):

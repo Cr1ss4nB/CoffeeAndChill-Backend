@@ -1,6 +1,8 @@
 from datetime import datetime
 from typing import Optional
-from sqlmodel import SQLModel, Field
+
+from sqlmodel import Field, SQLModel
+
 
 class InventoryMovement(SQLModel, table=True):
     movement_id: Optional[int] = Field(default=None, primary_key=True)

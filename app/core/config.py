@@ -1,11 +1,13 @@
-﻿import os
+import os
+
 from dotenv import load_dotenv
 
 load_dotenv()
 
 
 class Settings:
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/coffee_chill")
+    DATABASE_URL: str = os.getenv(
+        "DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/coffee_chill")
     REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
     SECRET_KEY: str = os.getenv("SECRET_KEY", "development-secret-key")
     ALGORITHM: str = os.getenv("ALGORITHM", "HS256")

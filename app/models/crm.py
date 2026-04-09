@@ -1,7 +1,9 @@
-from datetime import datetime, date
-from typing import Optional, List, Dict, Any
-from sqlmodel import SQLModel, Field, Relationship, Column
+from datetime import date, datetime
+from typing import Any, Dict, List, Optional
+
 from sqlalchemy import JSON
+from sqlmodel import Column, Field, Relationship, SQLModel
+
 
 class Customer(SQLModel, table=True):
     customer_id: Optional[int] = Field(default=None, primary_key=True)
@@ -16,6 +18,7 @@ class Customer(SQLModel, table=True):
 
     reservations: List["WorkshopReservation"] = Relationship(back_populates="customer")
 
+
 class WorkshopReservation(SQLModel, table=True):
     reservation_id: Optional[int] = Field(default=None, primary_key=True)
     customer_id: int = Field(foreign_key="customer.customer_id")
@@ -29,6 +32,7 @@ class WorkshopReservation(SQLModel, table=True):
 
     customer: Customer = Relationship(back_populates="reservations")
 
+
 class Notification(SQLModel, table=True):
     notification_id: Optional[int] = Field(default=None, primary_key=True)
     customer_id: int = Field(foreign_key="customer.customer_id")
@@ -39,6 +43,7 @@ class Notification(SQLModel, table=True):
     status: str = Field(default="PENDING")
     sent_at: Optional[datetime] = Field(default=None)
     read_at: Optional[datetime] = Field(default=None)
+
 
 class ActivityLog(SQLModel, table=True):
     log_id: Optional[int] = Field(default=None, primary_key=True)

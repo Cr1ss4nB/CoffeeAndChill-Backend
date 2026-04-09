@@ -1,5 +1,7 @@
-from typing import Optional, List
-from sqlmodel import SQLModel, Field, Relationship
+from typing import List, Optional
+
+from sqlmodel import Field, Relationship, SQLModel
+
 
 class TableZone(SQLModel, table=True):
     zone_id: Optional[int] = Field(default=None, primary_key=True)
@@ -10,6 +12,7 @@ class TableZone(SQLModel, table=True):
     description: Optional[str] = Field(default=None)
 
     spots: List["TableSpot"] = Relationship(back_populates="zone")
+
 
 class TableSpot(SQLModel, table=True):
     table_id: Optional[int] = Field(default=None, primary_key=True)

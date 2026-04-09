@@ -1,6 +1,8 @@
-from datetime import datetime, date, time
-from typing import Optional, List
-from sqlmodel import SQLModel, Field, Relationship
+from datetime import date, datetime, time
+from typing import List, Optional
+
+from sqlmodel import Field, Relationship, SQLModel
+
 
 class Category(SQLModel, table=True):
     category_id: Optional[int] = Field(default=None, primary_key=True)
@@ -11,6 +13,7 @@ class Category(SQLModel, table=True):
 
     products: List["Product"] = Relationship(back_populates="category")
     workshops: List["Workshop"] = Relationship(back_populates="category")
+
 
 class Product(SQLModel, table=True):
     product_id: Optional[int] = Field(default=None, primary_key=True)
@@ -23,6 +26,7 @@ class Product(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     category: Category = Relationship(back_populates="products")
+
 
 class Workshop(SQLModel, table=True):
     workshop_id: Optional[int] = Field(default=None, primary_key=True)
@@ -37,6 +41,7 @@ class Workshop(SQLModel, table=True):
 
     category: Category = Relationship(back_populates="workshops")
     schedules: List["WorkshopSchedule"] = Relationship(back_populates="workshop")
+
 
 class WorkshopSchedule(SQLModel, table=True):
     schedule_id: Optional[int] = Field(default=None, primary_key=True)

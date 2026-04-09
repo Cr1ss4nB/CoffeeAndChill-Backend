@@ -1,0 +1,151 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+  - main
+  - develop
+  - feature/*
+
+pr:
+  - main
+  - develop
+
+resources:
+  repositories:
+    - repository: frontend
+      type: github
+      name: Cr1ss4nB/CoffeeAndChill-Frontend
+      endpoint: Cr1ss4nB
+      trigger:
+        branches:
+          include:
+            - main
+            - develop
+            - feature/*
+
+pool:
+  vmImage: "ubuntu-latest"
+
+variables:
+  # Sensitive variables defined in Azure DevOps:
+  # DOCKER_HUB_USERNAME, SECRET_KEY, DOCKER_HUB_PASSWORD (for service connection/login)
+  backendImageName: "coffee-chill-backend"
+  frontendImageName: "coffee-chill-frontend"
+  dockerHubRepo: "$(DOCKER_HUB_USERNAME)"
+  backendPath: "CoffeeAndChill-Backend"
+  frontendPath: "CoffeeAndChill-Frontend"
+
+stages:
+  # ---------------- LINT ----------------
+  - stage: Lint
+    jobs:
+      - job: LintBackend
+        steps:
+          - checkout: self
+            path: $(backendPath)
+
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: "3.11"
+
+          - script: |
+              cd $(Pipeline.Workspace)/$(backendPath)
+              python -m pip install -r requirements.txt
+              python -m pip install flake8
+              python -m flake8 .
+            displayName: "Run flake8"
+
+      - job: LintFrontend
+        steps:
+          - checkout: frontend
+            path: $(frontendPath)
+
+          - task: NodeTool@0
+            inputs:
+              versionSpec: "20.x"
+
+          - script: |
+              cd $(Pipeline.Workspace)/$(frontendPath)
+              npm ci
+              npm run lint
+            displayName: "Run eslint"
+
+  # ---------------- TEST ----------------
+  - stage: Test
+    dependsOn: Lint
+    jobs:
+      - job: TestBackend
+        steps:
+          - checkout: self
+            path: $(backendPath)
+
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: "3.11"
+
+          - script: |
+              cd $(Pipeline.Workspace)/$(backendPath)
+              pip install -r requirements.txt
+              pip install fakeredis pytest pytest-cov
+              pytest --cov=. --cov-fail-under=70
+            displayName: "Run pytest"
+
+      - job: TestFrontend
+        steps:
+          - checkout: frontend
+            path: $(frontendPath)
+
+          - task: NodeTool@0
+            inputs:
+              versionSpec: "20.x"
+
+          - script: |
+              cd $(Pipeline.Workspace)/$(frontendPath)
+              npm ci
+              npx vitest run --coverage --reporter=verbose
+            displayName: "Run vitest"
+
+  # ---------------- BUILD ----------------
+  - stage: Build
+    dependsOn: Test
+    jobs:
+      - job: BuildImages
+        steps:
+          - checkout: self
+            path: $(backendPath)
+
+          - checkout: frontend
+            path: $(frontendPath)
+
+          - script: |
+              docker build -t $(dockerHubRepo)/$(backendImageName):latest \
+                           -t $(dockerHubRepo)/$(backendImageName):$(Build.BuildId) \
+                           $(Pipeline.Workspace)/$(backendPath)
+
+            #  docker build -t $(dockerHubRepo)/$(frontendImageName):latest \
+             #              -t $(dockerHubRepo)/$(frontendImageName):$(Build.BuildId) \
+              #             $(Pipeline.Workspace)/$(frontendPath)
+            displayName: "Build Docker images"
+
+  # ---------------- PUSH ----------------
+  - stage: Push
+    dependsOn: Build
+    condition: and(succeeded(), in(variables['Build.SourceBranch'], 'refs/heads/main', 'refs/heads/develop'))
+    jobs:
+      - job: PushImages
+        steps:
+          - task: Docker@2
+            displayName: "Login to Docker Hub"
+            inputs:
+              command: "login"
+              containerRegistry: "dockerhub-conn"
+
+          - script: |
+              docker push $(dockerHubRepo)/$(backendImageName):latest
+              docker push $(dockerHubRepo)/$(backendImageName):$(Build.BuildId)
+
+            #  docker push $(dockerHubRepo)/$(frontendImageName):latest
+            #  docker push $(dockerHubRepo)/$(frontendImageName):$(Build.BuildId)
+            displayName: "Push images"

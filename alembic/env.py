@@ -1,11 +1,11 @@
-from logging.config import fileConfig
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
-from alembic import context
-from sqlmodel import SQLModel  # Use SQLModel metadata
 import os
-from dotenv import load_dotenv
+from logging.config import fileConfig
 
+from dotenv import load_dotenv
+from sqlalchemy import engine_from_config, pool
+from sqlmodel import SQLModel  # Use SQLModel metadata
+
+from alembic import context
 # Load models for autogenerate detection
 from app.models import *
 
@@ -22,6 +22,7 @@ target_metadata = SQLModel.metadata
 
 load_dotenv()
 
+
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode."""
     url = os.getenv("DATABASE_URL")
@@ -34,6 +35,7 @@ def run_migrations_offline() -> None:
 
     with context.begin_transaction():
         context.run_migrations()
+
 
 def run_migrations_online() -> None:
     """Run migrations in 'online' mode."""
@@ -53,6 +55,7 @@ def run_migrations_online() -> None:
 
         with context.begin_transaction():
             context.run_migrations()
+
 
 if context.is_offline_mode():
     run_migrations_offline()
