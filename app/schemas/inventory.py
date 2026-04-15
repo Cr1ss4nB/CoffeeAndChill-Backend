@@ -1,6 +1,35 @@
+from enum import Enum
 from typing import Optional
 
 from pydantic import BaseModel
+
+
+class AdjustmentReason(str, Enum):
+    RECEIPT = "RECEIPT"
+    WASTE = "WASTE"
+    LOSS = "LOSS"
+    RETURN = "RETURN"
+    ADJUSTMENT = "ADJUSTMENT"
+
+
+class AdjustmentRequest(BaseModel):
+    product_id: int
+    quantity: int
+    reason: AdjustmentReason
+    notes: Optional[str] = None
+
+
+class MovementResponse(BaseModel):
+    movement_id: int
+    product_id: int
+    product_name: str
+    system_user_id: int
+    user_name: str
+    movement_type: str
+    quantity: int
+    unit_cost: Optional[float] = None
+    reason: Optional[str] = None
+    movement_date: str
 
 
 class InventoryResponse(BaseModel):

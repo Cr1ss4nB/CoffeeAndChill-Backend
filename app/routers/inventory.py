@@ -1,16 +1,20 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlmodel import Session, func, select
 
 from app.core.config import settings
+from app.core.database import get_db
 from app.core.dependencies import get_current_user, require_permission
-from app.core.security import hash_password
 from app.models.catalog import Category, Product
 from app.models.inventory import InventoryMovement
 from app.models.security import SystemUser
 from app.schemas.auth import UserResponse
-from app.schemas.inventory import InventoryListResponse, InventoryResponse
+from app.schemas.inventory import (
+    AdjustmentRequest,
+    InventoryListResponse,
+    InventoryResponse,
+)
 
 router = APIRouter(prefix="/inventory", tags=["Inventory"])
 
@@ -83,3 +87,61 @@ def get_inventory(
         limit=limit,
         low_stock_count=low_stock_count,
     )
+
+
+@router.post("/adjustments", response_model=dict)
+def create_adjustment(
+    adjustment: AdjustmentRequest,
+    session: Session = Depends(get_db),
+    user: UserResponse = Depends(require_permission("inventory:adjust")),
+):
+    product = session.get(Product, adjustment.product_id)
+    if not product:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Producto no encontrado",
+        )
+
+    stock_query = select(
+        func.coalesce(
+            func.sum(
+                func.case(
+                    (
+                        InventoryMovement.movement_type == "IN",
+                        InventoryMovement.quantity,
+                    ),
+                    (
+                        InventoryMovement.movement_type == "OUT",
+                        -InventoryMovement.quantity,
+                    ),
+                    else_=0,
+                )
+            ),
+            0,
+        )
+    ).where(InventoryMovement.product_id == adjustment.product_id)
+    current_stock = session.exec(stock_query).one()
+
+    new_stock = current_stock + adjustment.quantity
+    if new_stock < 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"No hay suficiente stock. Stock actual: {current_stock}",
+        )
+
+    movement = InventoryMovement(
+        product_id=adjustment.product_id,
+        system_user_id=user.id,
+        movement_type="IN" if adjustment.quantity > 0 else "OUT",
+        quantity=abs(adjustment.quantity),
+        reason=adjustment.reason.value,
+    )
+    session.add(movement)
+    session.commit()
+    session.refresh(movement)
+
+    return {
+        "message": "Ajuste de inventario creado exitosamente",
+        "movement_id": movement.movement_id,
+        "new_stock": new_stock,
+    }
