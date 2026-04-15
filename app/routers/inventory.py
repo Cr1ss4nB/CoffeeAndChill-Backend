@@ -145,3 +145,57 @@ def create_adjustment(
         "movement_id": movement.movement_id,
         "new_stock": new_stock,
     }
+
+
+@router.get("/movements")
+def get_movements(
+    movement_type: Optional[str] = Query(None),
+    product_id: Optional[int] = Query(None),
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    session: Session = Depends(get_db),
+    user: UserResponse = Depends(require_permission("movements:view")),
+):
+    offset = (page - 1) * limit
+
+    query = select(InventoryMovement).order_by(InventoryMovement.movement_date.desc())
+
+    if movement_type:
+        query = query.where(InventoryMovement.movement_type == movement_type)
+    if product_id:
+        query = query.where(InventoryMovement.product_id == product_id)
+    if start_date:
+        query = query.where(InventoryMovement.movement_date >= start_date)
+    if end_date:
+        query = query.where(InventoryMovement.movement_date <= end_date)
+
+    total = session.exec(select(func.count()).select_from(query)).one()
+    movements = session.exec(query.offset(offset).limit(limit)).all()
+
+    results = []
+    for m in movements:
+        product = session.get(Product, m.product_id)
+        system_user = session.get(SystemUser, m.system_user_id)
+        results.append(
+            {
+                "movement_id": m.movement_id,
+                "product_id": m.product_id,
+                "product_name": product.name if product else "N/A",
+                "system_user_id": m.system_user_id,
+                "user_name": system_user.full_name if system_user else "N/A",
+                "movement_type": m.movement_type,
+                "quantity": m.quantity,
+                "unit_cost": m.unit_cost,
+                "reason": m.reason,
+                "movement_date": m.movement_date.isoformat(),
+            }
+        )
+
+    return {
+        "items": results,
+        "total": total,
+        "page": page,
+        "limit": limit,
+    }
