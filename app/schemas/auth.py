@@ -1,6 +1,6 @@
-from typing import Literal, Optional
-
+﻿from typing import Optional, Literal
 from pydantic import BaseModel, EmailStr, field_validator
+
 
 # ── Register (only for clients self-registering) ──────────────────────────────
 
@@ -28,6 +28,7 @@ class CustomerRegister(BaseModel):
 
 # ── Login (unified: employee/admin via system_user, client via customer) ───────
 
+
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
@@ -35,11 +36,12 @@ class LoginRequest(BaseModel):
 
 # ── Responses ─────────────────────────────────────────────────────────────────
 
+
 class UserResponse(BaseModel):
     id: int
     name: str
     email: str
-    role: str          # admin | employee | client
+    role: str  # admin | employee | client | waiter
 
     model_config = {"from_attributes": True}
 
