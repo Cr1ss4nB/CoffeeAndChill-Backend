@@ -8,12 +8,15 @@ from sqlmodel import Session, select
 from app.core.database import get_db
 from app.core.dependencies import get_current_user, security
 from app.core.redis import get_redis_client
-from app.core.security import (create_access_token, create_refresh_token,
-                               hash_password, verify_password)
+from app.core.security import (
+    create_access_token,
+    create_refresh_token,
+    hash_password,
+    verify_password,
+)
 from app.models.crm import Customer
 from app.models.security import SystemUser
-from app.schemas.auth import (CustomerRegister, LoginRequest, TokenResponse,
-                              UserResponse)
+from app.schemas.auth import CustomerRegister, LoginRequest, TokenResponse, UserResponse
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -24,12 +27,11 @@ def _user_response(id: int, name: str, email: str, role: str) -> UserResponse:
 
 # ── POST /auth/register ────────────────────────────────────────────────────────
 
+
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 def register(payload: CustomerRegister, session: Session = Depends(get_db)):
     """Register a new client account."""
-    existing = session.exec(
-        select(Customer).where(Customer.email == payload.email)
-    ).first()
+    existing = session.exec(select(Customer).where(Customer.email == payload.email)).first()
     if existing:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -57,6 +59,7 @@ def register(payload: CustomerRegister, session: Session = Depends(get_db)):
 
 # ── POST /auth/login ───────────────────────────────────────────────────────────
 
+
 @router.post("/login", response_model=TokenResponse)
 def login(payload: LoginRequest, session: Session = Depends(get_db)):
     """
@@ -64,9 +67,7 @@ def login(payload: LoginRequest, session: Session = Depends(get_db)):
     Returns JWT access + refresh tokens.
     """
     # 1. Try system_user (employees / admins)
-    sys_user = session.exec(
-        select(SystemUser).where(SystemUser.email == payload.email)
-    ).first()
+    sys_user = session.exec(select(SystemUser).where(SystemUser.email == payload.email)).first()
 
     if sys_user and verify_password(payload.password, sys_user.password_hash):
         if not sys_user.is_active:
@@ -79,9 +80,7 @@ def login(payload: LoginRequest, session: Session = Depends(get_db)):
 
     else:
         # 2. Try customer
-        customer = session.exec(
-            select(Customer).where(Customer.email == payload.email)
-        ).first()
+        customer = session.exec(select(Customer).where(Customer.email == payload.email)).first()
 
         if not customer or not customer.password_hash:
             raise HTTPException(
@@ -113,11 +112,12 @@ def login(payload: LoginRequest, session: Session = Depends(get_db)):
 
 # ── POST /auth/logout ──────────────────────────────────────────────────────────
 
+
 @router.post("/logout", status_code=status.HTTP_200_OK)
 def logout(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     redis_client: redis.Redis = Depends(get_redis_client),
-    current_user: UserResponse = Depends(get_current_user)
+    current_user: UserResponse = Depends(get_current_user),
 ):
     """
     Logout using Redis Blacklist. Extracts `jti` and sets it in Redis with the remaining TTL.
@@ -142,6 +142,7 @@ def logout(
         redis_client.setex(f"blacklist:{jti}", ttl, "true")
 
     return {"message": "Sesión cerrada exitosamente"}
+
 
 # ── GET /auth/me ───────────────────────────────────────────────────────────────
 

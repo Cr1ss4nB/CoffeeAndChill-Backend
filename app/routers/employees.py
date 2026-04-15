@@ -23,9 +23,7 @@ def get_employees(
     session: Session = Depends(get_db),
     user: UserResponse = Depends(require_permission("employees:manage")),
 ):
-    employees = session.exec(
-        select(SystemUser).where(SystemUser.is_active is True)
-    ).all()
+    employees = session.exec(select(SystemUser).where(SystemUser.is_active is True)).all()
     return [
         EmployeeResponse(
             employee_id=e.system_user_id,
@@ -60,9 +58,7 @@ def create_employee(
             detail="Rol inválido. Debe ser admin, waiter o cashier",
         )
 
-    role_obj = session.exec(
-        select(Role).where(Role.role_name == employee_data.role)
-    ).first()
+    role_obj = session.exec(select(Role).where(Role.role_name == employee_data.role)).first()
     if not role_obj:
         role_obj = Role(role_name=employee_data.role, permissions="[]")
         session.add(role_obj)
@@ -125,9 +121,7 @@ def update_employee(
     if employee_data.phone is not None:
         employee.phone = employee_data.phone
     if employee_data.role is not None:
-        role_obj = session.exec(
-            select(Role).where(Role.role_name == employee_data.role)
-        ).first()
+        role_obj = session.exec(select(Role).where(Role.role_name == employee_data.role)).first()
         if not role_obj:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

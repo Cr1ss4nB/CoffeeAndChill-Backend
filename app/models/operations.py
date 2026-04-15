@@ -30,7 +30,8 @@ class OrderItem(SQLModel, table=True):
 
     product_id: Optional[int] = Field(default=None, foreign_key="product.product_id")
     reservation_id: Optional[int] = Field(
-        default=None, foreign_key="workshopreservation.reservation_id")
+        default=None, foreign_key="workshopreservation.reservation_id"
+    )
 
     quantity: int
     unit_price: float = Field(decimal_places=2)

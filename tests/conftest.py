@@ -59,7 +59,7 @@ def test_data_fixture(session: Session):
         email="admin@example.com",
         password_hash=hash_password("adminpass"),
         role_id=role_admin.role_id,
-        is_active=True
+        is_active=True,
     )
     session.add(admin)
 
@@ -69,7 +69,7 @@ def test_data_fixture(session: Session):
         email="customer@example.com",
         password_hash=hash_password("customerpass"),
         is_registered=True,
-        loyalty_points=10
+        loyalty_points=10,
     )
     session.add(customer)
     session.commit()

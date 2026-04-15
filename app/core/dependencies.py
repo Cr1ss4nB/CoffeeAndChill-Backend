@@ -61,24 +61,18 @@ def get_current_user(
     else:
         user = session.get(SystemUser, user_id)
         if not user or not user.is_active:
-            raise HTTPException(
-                status_code=401, detail="Usuario inactivo o no encontrado"
-            )
+            raise HTTPException(status_code=401, detail="Usuario inactivo o no encontrado")
         name = user.full_name
         email = user.email
         is_active = user.is_active
 
-    return UserResponse(
-        id=user_id, name=name, email=email, role=role, is_active=is_active
-    )
+    return UserResponse(id=user_id, name=name, email=email, role=role, is_active=is_active)
 
 
 def require_role(allowed_roles: list[str]):
     def role_checker(user: UserResponse = Depends(get_current_user)):
         if user.role not in allowed_roles and "all" not in allowed_roles:
-            raise HTTPException(
-                status_code=403, detail="No tienes permisos suficientes"
-            )
+            raise HTTPException(status_code=403, detail="No tienes permisos suficientes")
         return user
 
     return role_checker
@@ -107,15 +101,11 @@ def require_permission(permission: str):
         session: Session = Depends(get_db),
     ) -> UserResponse:
         if permission not in PERMISSIONS:
-            raise HTTPException(
-                status_code=500, detail="Permiso no definido en el sistema"
-            )
+            raise HTTPException(status_code=500, detail="Permiso no definido en el sistema")
 
         role = session.get(Role, user.id)
         if not role or not role.permissions:
-            raise HTTPException(
-                status_code=403, detail="No tienes permisos suficientes"
-            )
+            raise HTTPException(status_code=403, detail="No tienes permisos suficientes")
 
         try:
             role_permissions = (
@@ -127,9 +117,7 @@ def require_permission(permission: str):
             role_permissions = []
 
         if permission not in role_permissions and user.role != "admin":
-            raise HTTPException(
-                status_code=403, detail="No tienes el permiso requerido"
-            )
+            raise HTTPException(status_code=403, detail="No tienes el permiso requerido")
 
         return user
 

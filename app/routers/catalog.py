@@ -34,9 +34,7 @@ def get_categories(
 def get_products(
     session: Session = Depends(get_db),
     category_id: Optional[int] = Query(None, description="Filtrar por categoría"),
-    active_only: bool = Query(
-        True, description="Mostrar solo productos con status ACTIVE"
-    ),
+    active_only: bool = Query(True, description="Mostrar solo productos con status ACTIVE"),
 ):
     """Obtiene el catálogo de productos disponibles."""
     stmt = select(Product)
