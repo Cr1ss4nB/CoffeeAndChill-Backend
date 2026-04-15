@@ -1,10 +1,8 @@
-from typing import Optional
-
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlmodel import Session, select
+from sqlmodel import Session
 
 from app.core.database import get_db
-from app.core.dependencies import get_current_user, require_permission
+from app.core.dependencies import require_permission
 from app.models.catalog import Category, Product
 from app.schemas.catalog import (
     ProductCreate,

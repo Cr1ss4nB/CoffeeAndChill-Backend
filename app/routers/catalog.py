@@ -6,17 +6,12 @@ from sqlalchemy import true
 from sqlmodel import Session, select
 
 from app.core.database import get_db
-from app.core.dependencies import get_current_user, require_permission
 from app.models.catalog import Category, Product
 from app.schemas.catalog import (
     CategoryResponse,
-    ProductCreate,
     ProductDetailResponse,
     ProductResponse,
-    ProductStatusUpdate,
-    ProductUpdate,
 )
-from app.schemas.auth import UserResponse
 
 router = APIRouter(prefix="/catalog", tags=["catalog"])
 

@@ -4,7 +4,7 @@ import json
 import redis
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from sqlmodel import Session, select
+from sqlmodel import Session
 
 from app.core.database import get_db
 from app.core.redis import get_redis_client

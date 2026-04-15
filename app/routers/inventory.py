@@ -5,8 +5,8 @@ from sqlmodel import Session, func, select
 
 from app.core.config import settings
 from app.core.database import get_db
-from app.core.dependencies import get_current_user, require_permission
-from app.models.catalog import Category, Product
+from app.core.dependencies import require_permission
+from app.models.catalog import Product
 from app.models.inventory import InventoryMovement
 from app.models.security import SystemUser
 from app.schemas.auth import UserResponse

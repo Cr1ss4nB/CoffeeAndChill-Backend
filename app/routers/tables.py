@@ -5,7 +5,7 @@ from sqlmodel import Session, select
 
 from app.core.database import get_db
 from app.core.dependencies import require_permission
-from app.models.infrastructure import TableSpot, TableZone
+from app.models.infrastructure import TableSpot
 from app.schemas.auth import UserResponse
 from app.schemas.tables import TableCreate, TableResponse, TableUpdate
 
@@ -17,7 +17,7 @@ def get_tables(
     session: Session = Depends(get_db),
     user: UserResponse = Depends(require_permission("tables:manage")),
 ):
-    tables = session.exec(select(TableSpot).where(TableSpot.is_active == True)).all()
+    tables = session.exec(select(TableSpot).where(TableSpot.is_active is True)).all()
     return tables
 
 
