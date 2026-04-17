@@ -30,12 +30,15 @@ def seed_catalog():
         session.refresh(cat2)
 
         print("Seeding products...")
-        p1 = Product(name="Espresso", category_id=cat1.category_id,
-                     price=450.00, stock_quantity=1000)
-        p2 = Product(name="Cappuccino", category_id=cat1.category_id,
-                     price=650.00, stock_quantity=500)
-        p3 = Product(name="Cheesecake", category_id=cat2.category_id,
-                     price=1200.00, stock_quantity=12)
+        p1 = Product(
+            name="Espresso", category_id=cat1.category_id, price=450.00, stock_quantity=1000
+        )
+        p2 = Product(
+            name="Cappuccino", category_id=cat1.category_id, price=650.00, stock_quantity=500
+        )
+        p3 = Product(
+            name="Cheesecake", category_id=cat2.category_id, price=1200.00, stock_quantity=12
+        )
         session.add_all([p1, p2, p3])
         session.commit()
 

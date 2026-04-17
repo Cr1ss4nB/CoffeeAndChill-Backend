@@ -16,7 +16,7 @@ class TableZone(SQLModel, table=True):
 
 class TableSpot(SQLModel, table=True):
     table_id: Optional[int] = Field(default=None, primary_key=True)
-    zone_id: int = Field(foreign_key="tablezone.zone_id")
+    zone_id: Optional[int] = Field(default=None, foreign_key="tablezone.zone_id")
     table_number: int
     table_code: str = Field(max_length=10, unique=True)
     capacity: int = Field(default=4)
@@ -24,4 +24,4 @@ class TableSpot(SQLModel, table=True):
     qr_code_url: Optional[str] = Field(default=None, max_length=255)
     is_active: bool = Field(default=True)
 
-    zone: TableZone = Relationship(back_populates="spots")
+    zone: Optional[TableZone] = Relationship(back_populates="spots")

@@ -21,6 +21,7 @@ def test_get_product_not_found(client: TestClient):
 
 def test_catalog_with_data(client: TestClient, session):
     from app.models.catalog import Category, Product
+
     cat = Category(category_name="Cat Test", type="PRODUCT")
     session.add(cat)
     session.commit()
