@@ -23,6 +23,7 @@ class Product(SQLModel, table=True):
     stock_quantity: int = Field(default=0)
     status: str = Field(default="ACTIVE")
     description: Optional[str] = Field(default=None)
+    image_url: Optional[str] = Field(default=None)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     category: Category = Relationship(back_populates="products")

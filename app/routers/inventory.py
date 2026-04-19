@@ -14,6 +14,7 @@ from app.schemas.inventory import (
     AdjustmentRequest,
     InventoryListResponse,
     InventoryResponse,
+    MovementListResponse,
 )
 
 router = APIRouter(prefix="/inventory", tags=["Inventory"])
@@ -135,6 +136,7 @@ def create_adjustment(
         movement_type="IN" if adjustment.quantity > 0 else "OUT",
         quantity=abs(adjustment.quantity),
         reason=adjustment.reason.value,
+        notes=adjustment.notes,
     )
     session.add(movement)
     session.commit()
@@ -147,7 +149,7 @@ def create_adjustment(
     }
 
 
-@router.get("/movements")
+@router.get("/movements", response_model=MovementListResponse)
 def get_movements(
     movement_type: Optional[str] = Query(None),
     product_id: Optional[int] = Query(None),
@@ -193,9 +195,9 @@ def get_movements(
             }
         )
 
-    return {
-        "items": results,
-        "total": total,
-        "page": page,
-        "limit": limit,
-    }
+    return MovementListResponse(
+        items=results,
+        total=total,
+        page=page,
+        limit=limit,
+    )
