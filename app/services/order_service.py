@@ -60,6 +60,10 @@ def process_checkout(session: Session, checkout_data: CheckoutRequest, current_u
         customer_id = None
     else:
         customer_id = current_user.id
+        from app.models.security import SystemUser
+        sys_admin = session.exec(select(SystemUser).where(SystemUser.is_active == True)).first()
+        if sys_admin:
+            system_user_id = sys_admin.system_user_id
         
     order = Order(
         customer_id=customer_id,
