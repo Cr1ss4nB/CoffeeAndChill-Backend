@@ -46,6 +46,7 @@ def create_product(
         stock_quantity=product_data.stock_quantity,
         description=product_data.description,
         status=product_data.status,
+        image_url=product_data.image_url,
     )
     session.add(product)
     session.commit()
@@ -96,6 +97,8 @@ def update_product(
         product.description = product_data.description
     if product_data.status is not None:
         product.status = product_data.status
+    if product_data.image_url is not None:
+        product.image_url = product_data.image_url
 
     session.commit()
     session.refresh(product)

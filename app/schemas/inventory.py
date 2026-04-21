@@ -48,3 +48,10 @@ class InventoryListResponse(BaseModel):
     page: int
     limit: int
     low_stock_count: int
+
+
+class MovementListResponse(BaseModel):
+    items: list[MovementResponse]
+    total: int
+    page: int
+    limit: int

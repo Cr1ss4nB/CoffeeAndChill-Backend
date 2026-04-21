@@ -12,5 +12,6 @@ class InventoryMovement(SQLModel, table=True):
     quantity: int
     unit_cost: Optional[float] = Field(default=None, decimal_places=2)
     reason: Optional[str] = Field(default=None)
+    notes: Optional[str] = Field(default=None)
     related_order_id: Optional[int] = Field(default=None, foreign_key="order.order_id")
     movement_date: datetime = Field(default_factory=datetime.utcnow)

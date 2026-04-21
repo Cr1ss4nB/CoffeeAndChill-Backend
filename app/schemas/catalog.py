@@ -21,6 +21,7 @@ class ProductResponse(BaseModel):
     stock_quantity: int
     status: str
     description: Optional[str] = None
+    image_url: Optional[str] = None
 
     model_config = {"from_attributes": True}
 
@@ -38,6 +39,7 @@ class ProductCreate(BaseModel):
     stock_quantity: int = 0
     description: Optional[str] = None
     status: str = "ACTIVE"
+    image_url: Optional[str] = None
 
 
 class ProductUpdate(BaseModel):
@@ -47,6 +49,7 @@ class ProductUpdate(BaseModel):
     stock_quantity: Optional[int] = None
     description: Optional[str] = None
     status: Optional[str] = None
+    image_url: Optional[str] = None
 
 
 class ProductStatusUpdate(BaseModel):
