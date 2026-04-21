@@ -70,7 +70,6 @@ def get_workshop_reservations(
     session: Session = Depends(get_db),
     user: UserResponse = Depends(require_permission("catalog:manage")),
 ):
-    from app.models.inventory import InventoryMovement # Assuming a reservation model exists or reusing workshop logic
     # In a full impl, we'd have a WorkshopReservation model. 
     # For now, let's assume we need to create it or simulated for this sprint.
     # To keep it consistent with the user's mock, I'll add a simple Reservation model if not present.
@@ -80,7 +79,7 @@ def get_workshop_reservations(
 @router.post("/{workshop_id}/reservations")
 def create_workshop_reservation(
     workshop_id: int,
-    reservation_data: any, # Placeholder schema
+    reservation_data: dict, # Changed from 'any' to 'dict' to fix FastAPI error
     session: Session = Depends(get_db)
 ):
     return {"message": "Reservación creada"}
