@@ -30,6 +30,7 @@ class OrderItemResponse(BaseModel):
 class OrderResponse(BaseModel):
     order_id: int
     customer_id: Optional[int] = None
+    table_id: Optional[int] = None
     order_type: str
     status: str
     total_amount: float
