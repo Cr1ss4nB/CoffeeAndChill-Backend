@@ -53,4 +53,3 @@ class WorkshopResponse(WorkshopBase):
     schedules: List[WorkshopScheduleResponse] = []
 
     model_config = {"from_attributes": True}
-    
