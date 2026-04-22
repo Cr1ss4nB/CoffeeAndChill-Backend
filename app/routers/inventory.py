@@ -1,7 +1,7 @@
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlmodel import Session, func, select
+from sqlmodel import Session, func, select, case
 
 from app.core.config import settings
 from app.core.database import get_db
@@ -43,7 +43,7 @@ def get_inventory(
         InventoryMovement.product_id,
         func.coalesce(
             func.sum(
-                func.case(
+                case(
                     (
                         InventoryMovement.movement_type == "IN",
                         InventoryMovement.quantity,
@@ -106,7 +106,7 @@ def create_adjustment(
     stock_query = select(
         func.coalesce(
             func.sum(
-                func.case(
+                case(
                     (
                         InventoryMovement.movement_type == "IN",
                         InventoryMovement.quantity,
@@ -153,6 +153,7 @@ def create_adjustment(
 def get_movements(
     movement_type: Optional[str] = Query(None),
     product_id: Optional[int] = Query(None),
+    system_user_id: Optional[int] = Query(None),
     start_date: Optional[str] = Query(None),
     end_date: Optional[str] = Query(None),
     page: int = Query(1, ge=1),
@@ -168,6 +169,8 @@ def get_movements(
         query = query.where(InventoryMovement.movement_type == movement_type)
     if product_id:
         query = query.where(InventoryMovement.product_id == product_id)
+    if system_user_id:
+        query = query.where(InventoryMovement.system_user_id == system_user_id)
     if start_date:
         query = query.where(InventoryMovement.movement_date >= start_date)
     if end_date:
