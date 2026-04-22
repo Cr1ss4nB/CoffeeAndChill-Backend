@@ -103,7 +103,15 @@ def require_permission(permission: str):
         if permission not in PERMISSIONS:
             raise HTTPException(status_code=500, detail="Permiso no definido en el sistema")
 
-        role = session.get(Role, user.id)
+        # Admin siempre puede continuar.
+        if (user.role or "").lower() == "admin":
+            return user
+
+        sys_user = session.get(SystemUser, user.id)
+        if not sys_user:
+            raise HTTPException(status_code=403, detail="Usuario del sistema no encontrado")
+
+        role = session.get(Role, sys_user.role_id)
         if not role or not role.permissions:
             raise HTTPException(status_code=403, detail="No tienes permisos suficientes")
 
@@ -116,7 +124,7 @@ def require_permission(permission: str):
         except (json.JSONDecodeError, TypeError):
             role_permissions = []
 
-        if permission not in role_permissions and user.role != "admin":
+        if permission not in role_permissions:
             raise HTTPException(status_code=403, detail="No tienes el permiso requerido")
 
         return user

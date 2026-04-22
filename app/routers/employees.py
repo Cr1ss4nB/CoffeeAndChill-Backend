@@ -23,7 +23,7 @@ def get_employees(
     session: Session = Depends(get_db),
     user: UserResponse = Depends(require_permission("employees:manage")),
 ):
-    employees = session.exec(select(SystemUser).where(SystemUser.is_active is True)).all()
+    employees = session.exec(select(SystemUser).where(SystemUser.is_active.is_(True))).all()
     return [
         EmployeeResponse(
             employee_id=e.system_user_id,

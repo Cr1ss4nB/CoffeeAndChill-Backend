@@ -31,6 +31,16 @@ class WorkshopBase(BaseModel):
 class WorkshopCreate(WorkshopBase):
     schedules: Optional[List[WorkshopScheduleCreate]] = None
 
+class WorkshopUpdate(BaseModel):
+    name: Optional[str] = None
+    category_id: Optional[int] = None
+    description: Optional[str] = None
+    duration_minutes: Optional[int] = None
+    max_capacity: Optional[int] = None
+    price: Optional[float] = None
+    instructor_name: Optional[str] = None
+    is_active: Optional[bool] = None
+
 class WorkshopResponse(WorkshopBase):
     workshop_id: int
     schedules: List[WorkshopScheduleResponse] = []

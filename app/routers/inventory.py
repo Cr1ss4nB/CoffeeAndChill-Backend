@@ -1,7 +1,7 @@
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlmodel import Session, func, select
+from sqlmodel import Session, func, select, case
 
 from app.core.config import settings
 from app.core.database import get_db
@@ -43,7 +43,7 @@ def get_inventory(
         InventoryMovement.product_id,
         func.coalesce(
             func.sum(
-                func.case(
+                case(
                     (
                         InventoryMovement.movement_type == "IN",
                         InventoryMovement.quantity,
@@ -106,7 +106,7 @@ def create_adjustment(
     stock_query = select(
         func.coalesce(
             func.sum(
-                func.case(
+                case(
                     (
                         InventoryMovement.movement_type == "IN",
                         InventoryMovement.quantity,

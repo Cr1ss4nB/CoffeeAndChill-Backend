@@ -1,5 +1,5 @@
 from typing import List
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 from sqlalchemy.orm import selectinload
 
@@ -44,3 +44,31 @@ def checkout(
     order_with_items = session.exec(stmt).first()
 
     return order_with_items
+
+@router.patch("/{order_id}/status", response_model=OrderResponse)
+def update_order_status(
+    order_id: int,
+    status_update: dict, # Expected {"status": "NEW_STATUS"}
+    session: Session = Depends(get_db),
+    current_user: UserResponse = Depends(require_role(["admin", "employee", "waiter", "cashier"]))
+):
+    """
+    Actualiza el estado de una orden.
+    """
+    order = session.get(Order, order_id)
+    if not order:
+        raise HTTPException(status_code=404, detail="Orden no encontrada")
+    
+    new_status = status_update.get("status")
+    if not new_status:
+        raise HTTPException(status_code=400, detail="El campo 'status' es requerido")
+        
+    order.status = new_status
+    session.add(order)
+    session.commit()
+    session.refresh(order)
+    
+    # Reload with items
+    stmt = select(Order).where(Order.order_id == order.order_id).options(selectinload(Order.items))
+    return session.exec(stmt).first()
+
