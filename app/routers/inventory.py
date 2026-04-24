@@ -49,7 +49,7 @@ def get_inventory(
                         InventoryMovement.quantity,
                     ),
                     (
-                        InventoryMovement.movement_type == "OUT",
+                        InventoryMovement.movement_type.in_(["OUT", "SALE", "WASTE"]),
                         -InventoryMovement.quantity,
                     ),
                     else_=0,
@@ -112,7 +112,7 @@ def create_adjustment(
                         InventoryMovement.quantity,
                     ),
                     (
-                        InventoryMovement.movement_type == "OUT",
+                        InventoryMovement.movement_type.in_(["OUT", "SALE", "WASTE"]),
                         -InventoryMovement.quantity,
                     ),
                     else_=0,

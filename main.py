@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import auth, catalog, employees, inventory, products, tables, orders, workshops
+from app.routers import auth, catalog, employees, ingredients, inventory, products, tables, orders, workshops
 
 app = FastAPI(
     title="Coffee & Chill API",
@@ -21,6 +21,7 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(catalog.router)
 app.include_router(inventory.router)
+app.include_router(ingredients.router)
 app.include_router(products.router)
 app.include_router(employees.router)
 app.include_router(tables.router)
