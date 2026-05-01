@@ -92,6 +92,8 @@ PERMISSIONS = {
     "employees:manage": "Gestionar empleados",
     "tables:manage": "Gestionar mesas",
     "roles:manage": "Crear y editar roles",
+    "catalog:manage": "Gestionar el catálogo completo",
+    "workshops:manage": "Gestionar talleres y reservaciones",
 }
 
 

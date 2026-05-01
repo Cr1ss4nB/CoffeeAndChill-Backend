@@ -6,6 +6,7 @@ from sqlalchemy import engine_from_config, pool
 from sqlmodel import SQLModel  # Use SQLModel metadata
 
 from alembic import context
+from app.core.config import settings
 
 # Load models for autogenerate detection
 from app.models import *
@@ -26,7 +27,7 @@ load_dotenv()
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode."""
-    url = os.getenv("DATABASE_URL")
+    url = settings.DATABASE_URL
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -41,7 +42,7 @@ def run_migrations_offline() -> None:
 def run_migrations_online() -> None:
     """Run migrations in 'online' mode."""
     # Build engine from environment URL
-    url = os.getenv("DATABASE_URL")
+    url = settings.DATABASE_URL
     connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",

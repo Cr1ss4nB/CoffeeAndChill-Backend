@@ -18,6 +18,7 @@ def get_tables(
     user: UserResponse = Depends(require_permission("tables:manage")),
 ):
     tables = session.exec(select(TableSpot).where(TableSpot.is_active is True)).all()
+    print(f"DEBUG: El servidor encontró {len(tables)} mesas activas.")
     return tables
 
 

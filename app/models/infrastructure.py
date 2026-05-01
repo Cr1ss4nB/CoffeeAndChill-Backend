@@ -22,6 +22,7 @@ class TableSpot(SQLModel, table=True):
     capacity: int = Field(default=4)
     status: str = Field(default="FREE")  # FREE|OCCUPIED|RESERVED|MAINTENANCE
     qr_code_url: Optional[str] = Field(default=None, max_length=255)
+    label: Optional[str] = Field(default=None, max_length=50)
     is_active: bool = Field(default=True)
 
     zone: Optional[TableZone] = Relationship(back_populates="spots")
