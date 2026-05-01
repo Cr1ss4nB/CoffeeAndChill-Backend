@@ -27,6 +27,34 @@ class Product(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     category: Category = Relationship(back_populates="products")
+    # This relationship represents the ingredients needed for THIS product
+    recipe_items: List["RecipeItem"] = Relationship(
+        back_populates="product", 
+        sa_relationship_kwargs={"foreign_keys": "[RecipeItem.product_id]"}
+    )
+    # This relationship represents where THIS product is used as an ingredient
+    used_in_recipes: List["RecipeItem"] = Relationship(
+        back_populates="ingredient",
+        sa_relationship_kwargs={"foreign_keys": "[RecipeItem.ingredient_id]"}
+    )
+
+
+class RecipeItem(SQLModel, table=True):
+    recipe_item_id: Optional[int] = Field(default=None, primary_key=True)
+    product_id: int = Field(foreign_key="product.product_id")
+    # ingredient_id refers to another Product that is marked as an ingredient (Insumo)
+    ingredient_id: int = Field(foreign_key="product.product_id")
+    quantity_needed: float = Field(default=1.0)
+    unit: str = Field(default="ud", max_length=10)
+
+    product: Product = Relationship(
+        back_populates="recipe_items", 
+        sa_relationship_kwargs={"foreign_keys": "[RecipeItem.product_id]"}
+    )
+    ingredient: Product = Relationship(
+        back_populates="used_in_recipes",
+        sa_relationship_kwargs={"foreign_keys": "[RecipeItem.ingredient_id]"}
+    )
 
 
 class Workshop(SQLModel, table=True):

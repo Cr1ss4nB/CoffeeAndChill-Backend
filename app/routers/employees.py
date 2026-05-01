@@ -23,13 +23,15 @@ def get_employees(
     session: Session = Depends(get_db),
     user: UserResponse = Depends(require_permission("employees:manage")),
 ):
-    employees = session.exec(select(SystemUser).where(SystemUser.is_active.is_(True))).all()
+    # Query all users and handle potential NULLs in is_active or filtering issues
+    employees = session.exec(select(SystemUser)).all()
+    print(f"DEBUG: El servidor ve estos emails: {[e.email for e in employees]}")
     return [
         EmployeeResponse(
             employee_id=e.system_user_id,
             full_name=e.full_name,
             email=e.email,
-            role=e.role,
+            role=e.role.role_name if e.role else "unknown",
             phone=e.phone,
             is_active=e.is_active,
         )
@@ -58,7 +60,9 @@ def create_employee(
             detail="Rol inválido. Debe ser admin, waiter o cashier",
         )
 
-    role_obj = session.exec(select(Role).where(Role.role_name == employee_data.role)).first()
+    role_obj = session.exec(
+        select(Role).where(Role.role_name == employee_data.role)
+    ).first()
     if not role_obj:
         role_obj = Role(role_name=employee_data.role, permissions="[]")
         session.add(role_obj)
@@ -121,7 +125,9 @@ def update_employee(
     if employee_data.phone is not None:
         employee.phone = employee_data.phone
     if employee_data.role is not None:
-        role_obj = session.exec(select(Role).where(Role.role_name == employee_data.role)).first()
+        role_obj = session.exec(
+            select(Role).where(Role.role_name == employee_data.role)
+        ).first()
         if not role_obj:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
