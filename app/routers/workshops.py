@@ -20,7 +20,7 @@ def get_workshops(session: Session = Depends(get_db)):
     """Obtiene el catálogo de talleres con formato compatible para el frontend."""
     stmt = (
         select(Workshop)
-        .where(Workshop.is_active == True)
+        .where(Workshop.is_active is True)
         .options(selectinload(Workshop.schedules))
     )
     workshops = session.exec(stmt).all()
