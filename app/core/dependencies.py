@@ -92,10 +92,8 @@ PERMISSIONS = {
     "employees:manage": "Gestionar empleados",
     "tables:manage": "Gestionar mesas",
     "roles:manage": "Crear y editar roles",
-    "ingredients:view": "Ver insumos y stock",
-    "ingredients:manage": "Crear y editar insumos",
-    "ingredients:adjust": "Realizar ajustes de stock de insumos",
-    "consumption:manage": "Configurar consumo de insumos por producto",
+    "catalog:manage": "Gestionar el catálogo completo",
+    "workshops:manage": "Gestionar talleres y reservaciones",
 }
 
 

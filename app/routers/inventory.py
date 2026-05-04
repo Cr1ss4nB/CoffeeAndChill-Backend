@@ -1,8 +1,7 @@
+"""
 from typing import Optional
-
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlmodel import Session, func, select, case
-
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.dependencies import require_permission
@@ -61,13 +60,18 @@ def get_inventory(
     stock_results = session.exec(stock_query).all()
     stock_map = {r.product_id: r.stock for r in stock_results}
 
-    items = []
+    # Calculate low stock count globally for the Navbar/Dashboard
+    all_active_products = session.exec(select(Product).where(Product.status == "ACTIVE")).all()
     low_stock_count = 0
+    for p in all_active_products:
+        p_stock = stock_map.get(p.product_id, p.stock_quantity)
+        if p_stock < settings.LOW_STOCK_THRESHOLD:
+            low_stock_count += 1
+
+    items = []
     for product in products:
         calculated_stock = stock_map.get(product.product_id, product.stock_quantity)
         is_low = calculated_stock < settings.LOW_STOCK_THRESHOLD
-        if is_low:
-            low_stock_count += 1
 
         items.append(
             InventoryResponse(
@@ -204,3 +208,4 @@ def get_movements(
         page=page,
         limit=limit,
     )
+"""
