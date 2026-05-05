@@ -1,7 +1,13 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
+from app.core.config import settings
 from app.routers import auth, catalog, employees, ingredients, inventory, products, tables, orders, workshops
+
+MEDIA_DIR = os.getenv("MEDIA_DIR", "/app/media")
+os.makedirs(os.path.join(MEDIA_DIR, "images"), exist_ok=True)
 
 app = FastAPI(
     title="Coffee & Chill API",
@@ -9,14 +15,15 @@ app = FastAPI(
     description="API para el sistema POS + Reservas de Coffee & Chill",
 )
 
-# CORS Configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, this should be specific
+    allow_origins=settings.FRONTEND_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
 
 app.include_router(auth.router)
 app.include_router(catalog.router)
