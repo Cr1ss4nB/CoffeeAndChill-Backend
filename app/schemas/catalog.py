@@ -22,6 +22,11 @@ class ProductResponse(BaseModel):
     status: str
     description: Optional[str] = None
     image_url: Optional[str] = None
+    fulfillment_type: str = "STOCK"  # STOCK | INGREDIENTS | BOTH (ver app.core.fulfillment.FulfillmentType)
+    available_to_sell: int = 0
+    max_units_by_ingredients: Optional[int] = None
+    max_units_by_product_stock: int = 0
+    ingredient_limited: bool = False
 
     model_config = {"from_attributes": True}
 
@@ -40,6 +45,7 @@ class ProductCreate(BaseModel):
     description: Optional[str] = None
     status: str = "ACTIVE"
     image_url: Optional[str] = None
+    fulfillment_type: str = "STOCK"
 
 
 class ProductUpdate(BaseModel):
@@ -50,6 +56,7 @@ class ProductUpdate(BaseModel):
     description: Optional[str] = None
     status: Optional[str] = None
     image_url: Optional[str] = None
+    fulfillment_type: Optional[str] = None
 
 
 class ProductStatusUpdate(BaseModel):

@@ -105,9 +105,13 @@ class InventoryResponse(BaseModel):
     name: str
     category: str
     price: float
+    # Unidades vendibles según la misma regla que /catalog (producto + receta)
     stock_quantity: int
     status: str
     is_low_stock: bool
+    fulfillment_type: str = "STOCK"
+    available_to_sell: int = 0
+    ingredient_limited: bool = False
 
 
 class InventoryListResponse(BaseModel):
