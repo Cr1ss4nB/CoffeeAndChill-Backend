@@ -37,6 +37,10 @@ class Settings:
     ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "15"))
     REFRESH_TOKEN_EXPIRE_DAYS: int = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", "7"))
     LOW_STOCK_THRESHOLD: int = int(os.getenv("LOW_STOCK_THRESHOLD", "10"))
+    FRONTEND_ORIGINS: list[str] = os.getenv(
+        "FRONTEND_ORIGINS",
+        "http://localhost,http://localhost:80,http://localhost:5173,http://127.0.0.1,http://127.0.0.1:5173",
+    ).split(",")
 
 
 settings = Settings()

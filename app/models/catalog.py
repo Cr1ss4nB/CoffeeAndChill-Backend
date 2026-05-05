@@ -21,6 +21,10 @@ class Product(SQLModel, table=True):
     category_id: int = Field(foreign_key="category.category_id")
     price: float = Field(decimal_places=2)
     stock_quantity: int = Field(default=0)
+    # STOCK: solo límite por `stock_quantity` (sin receta o sin mezclar con insumos).
+    # INGREDIENTS: cupo = receta; `stock_quantity` no limita.
+    # BOTH: min(unidades de producto, min por insumos).
+    fulfillment_type: str = Field(default="STOCK", max_length=20)
     status: str = Field(default="ACTIVE")
     description: Optional[str] = Field(default=None)
     image_url: Optional[str] = Field(default=None)

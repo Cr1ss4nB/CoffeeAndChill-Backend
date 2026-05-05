@@ -1,7 +1,7 @@
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, Relationship, SQLModel
 
 
 class InventoryMovement(SQLModel, table=True):
@@ -15,3 +15,47 @@ class InventoryMovement(SQLModel, table=True):
     notes: Optional[str] = Field(default=None)
     related_order_id: Optional[int] = Field(default=None, foreign_key="order.order_id")
     movement_date: datetime = Field(default_factory=datetime.utcnow)
+
+
+class Ingredient(SQLModel, table=True):
+    ingredient_id: Optional[int] = Field(default=None, primary_key=True)
+    name: str = Field(max_length=100)
+    unit: str = Field(max_length=20)  # ml, g, units, kg, l
+    description: Optional[str] = Field(default=None)
+    min_stock: float = Field(default=0)
+    is_active: bool = Field(default=True)
+
+    stock_movements: List["IngredientStockMovement"] = Relationship(
+        back_populates="ingredient"
+    )
+    consumptions: List["ProductConsumption"] = Relationship(
+        back_populates="ingredient"
+    )
+
+
+class IngredientStockMovement(SQLModel, table=True):
+    movement_id: Optional[int] = Field(default=None, primary_key=True)
+    ingredient_id: int = Field(foreign_key="ingredient.ingredient_id")
+    system_user_id: int = Field(foreign_key="systemuser.system_user_id")
+    movement_type: str = Field(max_length=20)  # IN|OUT|SALE|WASTE|ADJUSTMENT
+    quantity: float  # float to support fractional units (e.g. 250.5 ml)
+    related_order_id: Optional[int] = Field(default=None, foreign_key="order.order_id")
+    notes: Optional[str] = Field(default=None)
+    movement_date: datetime = Field(default_factory=datetime.utcnow)
+
+    ingredient: Ingredient = Relationship(back_populates="stock_movements")
+
+
+class ProductConsumption(SQLModel, table=True):
+    """
+    Defines how much of each ingredient is consumed when 1 unit of a product is sold.
+    Internally this is the recipe; publicly exposed as 'consumption' to avoid
+    restaurant-specific terminology that may not fit all business types.
+    """
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    product_id: int = Field(foreign_key="product.product_id")
+    ingredient_id: int = Field(foreign_key="ingredient.ingredient_id")
+    quantity_used: float  # quantity of ingredient consumed per 1 unit of product sold
+
+    ingredient: Ingredient = Relationship(back_populates="consumptions")

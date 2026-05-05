@@ -12,7 +12,14 @@ def test_checkout_success(client: TestClient, session: Session, test_data):
     token = login_resp.json()["access_token"]
 
     # 2. Add product explicitly
-    prod = Product(name="Test Espresso", category_id=1, price=150.0, stock_quantity=10, status="ACTIVE")
+    prod = Product(
+        name="Test Espresso",
+        category_id=1,
+        price=150.0,
+        stock_quantity=10,
+        status="ACTIVE",
+        fulfillment_type="STOCK",
+    )
     session.add(prod)
     session.commit()
     session.refresh(prod)
@@ -53,7 +60,14 @@ def test_checkout_insufficient_stock(client: TestClient, session: Session, test_
     login_resp = client.post("/auth/login", json={"email": "customer@example.com", "password": "customerpass"})
     token = login_resp.json()["access_token"]
 
-    prod = Product(name="No Stock", category_id=1, price=100.0, stock_quantity=1, status="ACTIVE")
+    prod = Product(
+        name="No Stock",
+        category_id=1,
+        price=100.0,
+        stock_quantity=1,
+        status="ACTIVE",
+        fulfillment_type="STOCK",
+    )
     session.add(prod)
     session.commit()
     session.refresh(prod)

@@ -1,4 +1,3 @@
-"""
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import selectinload
@@ -7,6 +6,7 @@ from sqlmodel import Session, select
 
 from app.core.database import get_db
 from app.models.catalog import Category, Product
+from app.routers.catalog_utils import product_to_catalog_response
 from app.schemas.catalog import (
     CategoryResponse,
     ProductDetailResponse,
@@ -21,7 +21,7 @@ def get_categories(
     session: Session = Depends(get_db),
     active_only: bool = Query(True, description="Filtrar solo categorías activas"),
 ):
-    Obtiene el listado de categorías del menú y talleres.
+    # Obtiene el listado de categorías del menú y talleres.
     stmt = select(Category)
     if active_only:
         stmt = stmt.where(Category.is_active == true()) 
@@ -44,7 +44,7 @@ def get_products(
         stmt = stmt.where(Product.category_id == category_id)
 
     products = session.exec(stmt).all()
-    return products
+    return [product_to_catalog_response(session, p) for p in products]
 
 
 @router.get("/products/{product_id}", response_model=ProductDetailResponse)
@@ -65,6 +65,13 @@ def get_product(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Producto no encontrado",
         )
-
-    return product
-"""
+    if not product.category:
+        raise HTTPException(
+            status_code=500,
+            detail="Producto sin categoría cargada",
+        )
+    pr = product_to_catalog_response(session, product)
+    return ProductDetailResponse(
+        **pr.model_dump(),
+        category=CategoryResponse.model_validate(product.category),
+    )

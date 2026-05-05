@@ -44,11 +44,15 @@ services:
     env_file:
       - .env
     environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      REDIS_URL: redis://redis:6379/0
       FRONTEND_ORIGINS: ${FRONTEND_ORIGINS:-http://localhost,http://localhost:80,http://localhost:5173,http://127.0.0.1,http://127.0.0.1:80,http://127.0.0.1:5173}
     # volumes:
     #   - .:/app
     ports:
       - "8000:8000"
+    volumes:
+      - media_data:/app/media
     depends_on:
       db:
         condition: service_healthy
@@ -62,9 +66,46 @@ services:
       timeout: 5s
       retries: 5
 
+  frontend:
+    build:
+      context: ../CoffeeAndChill-Frontend
+      dockerfile: Dockerfile
+    container_name: coffee_chill_frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  # Ejecuta datos de prueba: docker compose run --rm seed
+  # (perfil "seed" para no arrancar con "docker compose up" solo)
+  seed:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: coffee_chill_seed
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+    command: python scripts/seed.py
+    restart: "no"
+    profiles:
+      - seed
+
 networks:
   app-network:
     driver: bridge
 
 volumes:
   postgres_data:
+  media_data:

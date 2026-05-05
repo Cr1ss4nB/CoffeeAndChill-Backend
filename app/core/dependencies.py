@@ -94,6 +94,10 @@ PERMISSIONS = {
     "roles:manage": "Crear y editar roles",
     "catalog:manage": "Gestionar el catálogo completo",
     "workshops:manage": "Gestionar talleres y reservaciones",
+    "ingredients:view": "Ver insumos e inventario de ingredientes",
+    "ingredients:manage": "Crear y editar insumos",
+    "ingredients:adjust": "Realizar ajustes de stock de insumos",
+    "consumption:manage": "Gestionar recetas de consumo por producto",
 }
 
 
