@@ -1,6 +1,6 @@
-"""
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.orm import selectinload
 from sqlmodel import Session, func, select, case
 from app.core.config import settings
 from app.core.database import get_db
@@ -15,6 +15,7 @@ from app.schemas.inventory import (
     InventoryResponse,
     MovementListResponse,
 )
+from app.services import availability as av
 
 router = APIRouter(prefix="/inventory", tags=["Inventory"])
 
@@ -29,13 +30,15 @@ def get_inventory(
 ):
     offset = (page - 1) * limit
 
-    product_query = select(Product).where(Product.status == "ACTIVE")
-
+    cond = Product.status == "ACTIVE"
     if category_id:
-        product_query = product_query.where(Product.category_id == category_id)
-
-    total = session.exec(select(func.count()).select_from(product_query)).one()
-
+        cond = (Product.status == "ACTIVE") & (Product.category_id == category_id)
+    total = session.exec(select(func.count()).where(cond)).one()
+    product_query = (
+        select(Product)
+        .where(cond)
+        .options(selectinload(Product.category))
+    )
     products = session.exec(product_query.offset(offset).limit(limit)).all()
 
     stock_query = select(
@@ -69,19 +72,23 @@ def get_inventory(
             low_stock_count += 1
 
     items = []
+    items = []
     for product in products:
-        calculated_stock = stock_map.get(product.product_id, product.stock_quantity)
-        is_low = calculated_stock < settings.LOW_STOCK_THRESHOLD
-
+        snap = av.compute_sellable_snapshot(session, product)
+        sellable = snap["available_to_sell"]
+        is_low = sellable < settings.LOW_STOCK_THRESHOLD
         items.append(
             InventoryResponse(
                 product_id=product.product_id,
                 name=product.name,
                 category=product.category.category_name if product.category else "N/A",
                 price=product.price,
-                stock_quantity=calculated_stock,
+                stock_quantity=sellable,
                 status=product.status,
                 is_low_stock=is_low,
+                fulfillment_type=snap["fulfillment_type"],
+                available_to_sell=sellable,
+                ingredient_limited=snap["ingredient_limited"],
             )
         )
 
@@ -208,4 +215,3 @@ def get_movements(
         page=page,
         limit=limit,
     )
-"""

@@ -5,6 +5,8 @@ from sqlmodel import Session, func, select, case
 
 from app.core.database import get_db
 from app.core.dependencies import require_permission
+from app.core.fulfillment import FulfillmentType
+from app.models.catalog import Product
 from app.models.inventory import Ingredient, IngredientStockMovement, ProductConsumption
 from app.schemas.auth import UserResponse
 from app.schemas.inventory import (
@@ -222,15 +224,30 @@ def upsert_product_consumption(
     user: UserResponse = Depends(require_permission("consumption:manage")),
 ):
     """
-    Replace all consumption entries for a product.
-    Send an empty items list to clear consumption (product becomes stock-only).
+    Reemplaza la receta (fuente de verdad). Lista vacía = sin receta, el producto pasa
+    a política `STOCK` salvo que se ajuste en /products.
+
+    Tras añadir líneas, si el producto estaba en `STOCK` se ajusta a `INGREDIENTS`
+    (cupo llevado por insumos; cambiar a `BOTH` en /products si hace falta mín. con
+    unidades de producto en almacén).
     """
-    # Validate all ingredients exist
+    product = session.get(Product, product_id)
+    if not product:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Producto no encontrado",
+        )
     for item in data.items:
-        if not session.get(Ingredient, item.ingredient_id):
+        ing = session.get(Ingredient, item.ingredient_id)
+        if not ing:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Insumo id {item.ingredient_id} no encontrado",
+            )
+        if not ing.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Insumo inactivo: {ing.name} (ingredient_id {ing.ingredient_id})",
             )
 
     # Delete existing entries for this product
@@ -263,5 +280,11 @@ def upsert_product_consumption(
             )
         )
 
+    if data.items:
+        if product.fulfillment_type == FulfillmentType.STOCK.value:
+            product.fulfillment_type = FulfillmentType.INGREDIENTS.value
+    else:
+        product.fulfillment_type = FulfillmentType.STOCK.value
+    session.add(product)
     session.commit()
     return result
