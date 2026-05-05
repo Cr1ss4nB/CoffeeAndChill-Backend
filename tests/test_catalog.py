@@ -27,7 +27,13 @@ def test_catalog_with_data(client: TestClient, session):
     session.commit()
     session.refresh(cat)
 
-    prod = Product(name="Prod Test", category_id=cat.category_id, price=100.0, stock_quantity=10)
+    prod = Product(
+        name="Prod Test",
+        category_id=cat.category_id,
+        price=100.0,
+        stock_quantity=10,
+        fulfillment_type="STOCK",
+    )
     session.add(prod)
     session.commit()
     session.refresh(prod)
@@ -42,7 +48,10 @@ def test_catalog_with_data(client: TestClient, session):
     resp_prod = client.get("/catalog/products")
     assert resp_prod.status_code == 200
     assert len(resp_prod.json()) == 1
-    assert resp_prod.json()[0]["name"] == "Prod Test"
+    row = resp_prod.json()[0]
+    assert row["name"] == "Prod Test"
+    assert row["available_to_sell"] == 10
+    assert row["fulfillment_type"] == "STOCK"
 
     # Test get product specific
     resp_detail = client.get(f"/catalog/products/{prod.product_id}")
