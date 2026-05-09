@@ -7,7 +7,7 @@ from fastapi import HTTPException, status
 from sqlmodel import Session, select
 
 from app.models.catalog import Product, RecipeItem
-from sqlalchemy.orm import selectinload
+from app.models.inventory import Ingredient, IngredientStockMovement, InventoryMovement, ProductConsumption
 from app.models.operations import Order, OrderItem
 from app.models.security import SystemUser
 from app.schemas.auth import UserResponse
@@ -87,67 +87,6 @@ def process_checkout(
                 "special": item_data.special_instructions,
             }
         )
-        # Check for recipes (Ingredients)
-        # Use selectinload to get recipe items in the same session
-        stmt = select(Product).where(Product.product_id == item_data.product_id).options(selectinload(Product.recipe_items))
-        product_with_recipe = session.exec(stmt).first()
-        
-        if product_with_recipe and product_with_recipe.recipe_items:
-            for recipe_item in product_with_recipe.recipe_items:
-                ingredient = session.get(Product, recipe_item.ingredient_id)
-                if ingredient:
-                    total_needed = item_data.quantity * recipe_item.quantity_needed
-                    if ingredient.stock_quantity < total_needed:
-                        raise HTTPException(
-                            status_code=status.HTTP_400_BAD_REQUEST,
-                            detail=f"Insumo insuficiente: {ingredient.name}. Necesario: {total_needed}, Disponible: {ingredient.stock_quantity}",
-                        )
-                    ingredient.stock_quantity -= int(total_needed) # Assuming integer stock for now
-                    session.add(ingredient)
-        else:
-            # Fallback: Deduct from product's own stock if no recipe is defined
-            if product.stock_quantity < item_data.quantity:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Stock insuficiente para {product.name}. Disponible: {product.stock_quantity}",
-                )
-            product.stock_quantity -= item_data.quantity
-            session.add(product)
-
-        # Calculate secure subtotal
-        item_subtotal = float(product.price) * item_data.quantity
-        total_amount += item_subtotal
-
-        # Build Order Item (without parent Order ID yet)
-        order_item = OrderItem(
-            product_id=product.product_id,
-            quantity=item_data.quantity,
-            unit_price=product.price,
-            subtotal=item_subtotal,
-            item_type="PRODUCT",
-            status="PENDING",
-            special_instructions=item_data.special_instructions,
-        )
-        order_items_to_save.append(order_item)
-
-        # Collect data for SALE movement (order_id not available yet)
-        sale_movements_to_save.append(
-            {"product_id": product.product_id, "quantity": item_data.quantity}
-        )
-
-    system_user_id = 1
-    if current_user.role != "client":
-        system_user_id = current_user.id
-        customer_id = None
-    else:
-        customer_id = current_user.id
-        from app.models.security import SystemUser
-
-        sys_admin = session.exec(
-            select(SystemUser).where(SystemUser.is_active)
-        ).first()
-        if sys_admin:
-            system_user_id = sys_admin.system_user_id
 
     order = Order(
         customer_id=customer_id,
