@@ -13,6 +13,22 @@ class CategoryResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class CategoryCreate(BaseModel):
+    category_name: str
+    type: str
+    description: Optional[str] = None
+
+
+class CategoryUpdate(BaseModel):
+    category_name: Optional[str] = None
+    description: Optional[str] = None
+    is_active: Optional[bool] = None
+
+
+class CategoryStatusUpdate(BaseModel):
+    is_active: bool
+
+
 class ProductResponse(BaseModel):
     product_id: int
     name: str

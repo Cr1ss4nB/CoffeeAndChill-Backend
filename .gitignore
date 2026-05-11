@@ -36,3 +36,7 @@ ENV/
 # Database
 *.db
 *.sqlite
+
+#Agents
+.agents
+skills-lock.json

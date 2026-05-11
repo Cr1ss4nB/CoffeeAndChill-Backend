@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.core.config import settings
-from app.routers import auth, catalog, employees, ingredients, inventory, products, tables, orders, workshops
+from app.routers import auth, catalog, categories, employees, ingredients, inventory, products, tables, orders, workshops
 
 MEDIA_DIR = os.getenv("MEDIA_DIR", "/app/media")
 os.makedirs(os.path.join(MEDIA_DIR, "images"), exist_ok=True)
@@ -27,6 +27,7 @@ app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
 
 app.include_router(auth.router)
 app.include_router(catalog.router)
+app.include_router(categories.router)
 app.include_router(inventory.router)
 app.include_router(ingredients.router)
 app.include_router(products.router)
