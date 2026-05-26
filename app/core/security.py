@@ -1,11 +1,13 @@
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 from typing import Optional
 
-from jose import JWTError, jwt
+import jwt
+from jwt.exceptions import PyJWTError
 from passlib.context import CryptContext
 
 from app.core.config import settings
+from app.core.time import utc_now
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__rounds=12)
 
@@ -21,8 +23,9 @@ def verify_password(plain: str, hashed: str) -> bool:
 def _make_token(data: dict, expire_delta: timedelta) -> str:
     payload = data.copy()
     payload["jti"] = str(uuid.uuid4())
-    payload["iat"] = datetime.now(timezone.utc)
-    payload["exp"] = datetime.now(timezone.utc) + expire_delta
+    now = utc_now()
+    payload["iat"] = now
+    payload["exp"] = now + expire_delta
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
@@ -43,5 +46,5 @@ def create_refresh_token(user_id: int, role: str) -> str:
 def decode_token(token: str) -> Optional[dict]:
     try:
         return jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-    except JWTError:
+    except PyJWTError:
         return None
