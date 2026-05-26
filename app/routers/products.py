@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi import status as http_status
 from sqlmodel import Session
 
+from app.core.config import settings
 from app.core.database import get_db
 from app.core.dependencies import require_permission, require_role
 from app.core.fulfillment import FulfillmentType
@@ -14,8 +15,7 @@ from app.routers.catalog_utils import product_to_catalog_response
 from app.schemas.catalog import ProductCreate, ProductResponse, ProductStatusUpdate, ProductUpdate
 from app.schemas.auth import UserResponse
 
-MEDIA_DIR = os.getenv("MEDIA_DIR", "/app/media")
-IMAGES_DIR = os.path.join(MEDIA_DIR, "images")
+IMAGES_DIR = os.path.join(settings.MEDIA_DIR, "images")
 _ALLOWED_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
 _MAX_BYTES = 5 * 1024 * 1024  # 5 MB
 

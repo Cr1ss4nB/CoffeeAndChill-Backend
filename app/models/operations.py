@@ -3,6 +3,8 @@ from typing import List, Optional
 
 from sqlmodel import Field, Relationship, SQLModel
 
+from app.core.time import utc_now
+
 
 class Order(SQLModel, table=True):
     order_id: Optional[int] = Field(default=None, primary_key=True)
@@ -18,7 +20,7 @@ class Order(SQLModel, table=True):
     discount_amount: float = Field(default=0, decimal_places=2)
     total_amount: float = Field(decimal_places=2)
 
-    order_date: datetime = Field(default_factory=datetime.utcnow)
+    order_date: datetime = Field(default_factory=utc_now)
     notes: Optional[str] = Field(default=None)
 
     items: List["OrderItem"] = Relationship(back_populates="order")
@@ -56,7 +58,7 @@ class Payment(SQLModel, table=True):
     transaction_reference: Optional[str] = Field(default=None, max_length=100)
     tip_amount: float = Field(default=0, decimal_places=2)
 
-    payment_date: datetime = Field(default_factory=datetime.utcnow)
+    payment_date: datetime = Field(default_factory=utc_now)
     system_user_id: int = Field(foreign_key="systemuser.system_user_id")
 
 
@@ -71,5 +73,5 @@ class Invoice(SQLModel, table=True):
     tax_id: Optional[str] = Field(default=None, max_length=50)
 
     total_amount: float = Field(decimal_places=2)
-    invoice_date: datetime = Field(default_factory=datetime.utcnow)
+    invoice_date: datetime = Field(default_factory=utc_now)
     pdf_url: Optional[str] = Field(default=None, max_length=255)

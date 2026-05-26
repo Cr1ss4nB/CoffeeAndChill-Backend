@@ -36,3 +36,11 @@ ENV/
 # Database
 *.db
 *.sqlite
+
+media/
+tests/media/
+
+#Agents
+.agents
+skills-lock.json
+.claude

@@ -29,6 +29,10 @@ def _build_database_url() -> str:
     return "postgresql://postgres:postgres@localhost:5432/coffee_chill"
 
 
+_BACKEND_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+_DEFAULT_MEDIA_DIR = os.path.join(_BACKEND_ROOT, "media")
+
+
 class Settings:
     DATABASE_URL: str = _build_database_url()
     REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
@@ -41,6 +45,7 @@ class Settings:
         "FRONTEND_ORIGINS",
         "http://localhost,http://localhost:80,http://localhost:5173,http://127.0.0.1,http://127.0.0.1:5173",
     ).split(",")
+    MEDIA_DIR: str = os.getenv("MEDIA_DIR", _DEFAULT_MEDIA_DIR)
 
 
 settings = Settings()
