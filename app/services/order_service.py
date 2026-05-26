@@ -1,14 +1,12 @@
-from __future__ import annotations
-
 from collections import defaultdict
 from datetime import datetime, timezone
 
-from fastapi import HTTPException, status
+from fastapi import HTTPException
 from sqlmodel import Session, select
 
-from app.models.catalog import Product, RecipeItem
-from sqlalchemy.orm import selectinload
+from app.models.catalog import Product
 from app.models.operations import Order, OrderItem
+from app.models.inventory import InventoryMovement, IngredientStockMovement, ProductConsumption
 from app.models.security import SystemUser
 from app.schemas.auth import UserResponse
 from app.schemas.order import CheckoutRequest
@@ -18,10 +16,10 @@ from app.services import availability as av
 def _resolve_system_user_id(session: Session, current_user: UserResponse) -> int:
     if current_user.role != "client":
         return current_user.id
-    admin = session.exec(select(SystemUser).where(SystemUser.is_active)).first()
+    admin = session.exec(select(SystemUser).where(SystemUser.is_active == True)).first()
     if not admin:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=500,
             detail="No hay usuario de sistema activo para registrar la venta",
         )
     return int(admin.system_user_id)
@@ -30,28 +28,18 @@ def _resolve_system_user_id(session: Session, current_user: UserResponse) -> int
 def process_checkout(
     session: Session, checkout_data: CheckoutRequest, current_user: UserResponse
 ) -> Order:
-    """
-    Una sola transacción: valida cupo (producto + receta) y aplica movimientos.
-    """
     if not checkout_data.items:
         raise HTTPException(status_code=400, detail="El carrito está vacío")
 
-    total_amount = 0.0
-    order_items_data: list[dict] = []
-    system_user_id = _resolve_system_user_id(session, current_user)
-    customer_id = current_user.id if current_user.role == "client" else None
-
-    # Cantidad total por producto (líneas duplicadas)
     qty_by_product: dict[int, int] = defaultdict(int)
     for item_data in checkout_data.items:
         qty_by_product[item_data.product_id] += item_data.quantity
 
-    # Fase 1: validar todo antes de tocar el estado
     for product_id, total_q in qty_by_product.items():
         product = session.get(Product, product_id)
         if not product or product.status != "ACTIVE":
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
+                status_code=404,
                 detail=f"Producto id {product_id} no existe o no está activo",
             )
         if total_q < 1:
@@ -60,7 +48,7 @@ def process_checkout(
         snap = av.compute_sellable_snapshot(session, product)
         if total_q > snap["available_to_sell"]:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
+                status_code=400,
                 detail=(
                     f"Stock insuficiente para {product.name}. "
                     f"Disponible: {snap['available_to_sell']}. "
@@ -70,84 +58,35 @@ def process_checkout(
             )
         ok, err = av.validate_recipe_allows_ingredient_deduction(session, product, total_q)
         if not ok:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=err or "Insumos insuficientes")
+            raise HTTPException(status_code=400, detail=err or "Insumos insuficientes")
 
-    # Preparar ítems y subtotales
+    total_amount = 0.0
+    order_items_data: list[dict] = []
+
     for item_data in checkout_data.items:
         product = session.get(Product, item_data.product_id)
         if not product:
             raise HTTPException(status_code=404, detail="Producto no encontrado")
-        subtotal = float(product.price) * item_data.quantity
-        total_amount += subtotal
+
+        item_subtotal = float(product.price) * item_data.quantity
+        total_amount += item_subtotal
+
+        consumptions = session.exec(
+            select(ProductConsumption).where(ProductConsumption.product_id == item_data.product_id)
+        ).all()
+
         order_items_data.append(
             {
                 "product": product,
                 "quantity": item_data.quantity,
-                "subtotal": subtotal,
+                "subtotal": item_subtotal,
                 "special": item_data.special_instructions,
+                "consumptions": list(consumptions),
             }
         )
-        # Check for recipes (Ingredients)
-        # Use selectinload to get recipe items in the same session
-        stmt = select(Product).where(Product.product_id == item_data.product_id).options(selectinload(Product.recipe_items))
-        product_with_recipe = session.exec(stmt).first()
-        
-        if product_with_recipe and product_with_recipe.recipe_items:
-            for recipe_item in product_with_recipe.recipe_items:
-                ingredient = session.get(Product, recipe_item.ingredient_id)
-                if ingredient:
-                    total_needed = item_data.quantity * recipe_item.quantity_needed
-                    if ingredient.stock_quantity < total_needed:
-                        raise HTTPException(
-                            status_code=status.HTTP_400_BAD_REQUEST,
-                            detail=f"Insumo insuficiente: {ingredient.name}. Necesario: {total_needed}, Disponible: {ingredient.stock_quantity}",
-                        )
-                    ingredient.stock_quantity -= int(total_needed) # Assuming integer stock for now
-                    session.add(ingredient)
-        else:
-            # Fallback: Deduct from product's own stock if no recipe is defined
-            if product.stock_quantity < item_data.quantity:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Stock insuficiente para {product.name}. Disponible: {product.stock_quantity}",
-                )
-            product.stock_quantity -= item_data.quantity
-            session.add(product)
 
-        # Calculate secure subtotal
-        item_subtotal = float(product.price) * item_data.quantity
-        total_amount += item_subtotal
-
-        # Build Order Item (without parent Order ID yet)
-        order_item = OrderItem(
-            product_id=product.product_id,
-            quantity=item_data.quantity,
-            unit_price=product.price,
-            subtotal=item_subtotal,
-            item_type="PRODUCT",
-            status="PENDING",
-            special_instructions=item_data.special_instructions,
-        )
-        order_items_to_save.append(order_item)
-
-        # Collect data for SALE movement (order_id not available yet)
-        sale_movements_to_save.append(
-            {"product_id": product.product_id, "quantity": item_data.quantity}
-        )
-
-    system_user_id = 1
-    if current_user.role != "client":
-        system_user_id = current_user.id
-        customer_id = None
-    else:
-        customer_id = current_user.id
-        from app.models.security import SystemUser
-
-        sys_admin = session.exec(
-            select(SystemUser).where(SystemUser.is_active)
-        ).first()
-        if sys_admin:
-            system_user_id = sys_admin.system_user_id
+    system_user_id = _resolve_system_user_id(session, current_user)
+    customer_id = current_user.id if current_user.role == "client" else None
 
     order = Order(
         customer_id=customer_id,
@@ -168,22 +107,8 @@ def process_checkout(
     for entry in order_items_data:
         product = entry["product"]
         qty = entry["quantity"]
-        recipe = session.exec(
-            select(ProductConsumption).where(ProductConsumption.product_id == product.product_id)
-        ).all()
-        has_recipe = len(recipe) > 0
-        dec_stock = av.should_decrement_product_stock(product.fulfillment_type, has_recipe)
-        rec_m = av.should_record_product_inventory_movement(product.fulfillment_type, has_recipe)
-
-        if dec_stock and product.stock_quantity < qty:
-            session.rollback()
-            raise HTTPException(
-                status_code=400,
-                detail=f"Condición de carrera: stock bajo de {product.name} al confirmar. Reintente.",
-            )
-        if dec_stock:
-            product.stock_quantity -= qty
-            session.add(product)
+        consumptions = entry["consumptions"]
+        has_recipe = bool(consumptions)
 
         item = OrderItem(
             order_id=order.order_id,
@@ -197,6 +122,13 @@ def process_checkout(
         )
         session.add(item)
 
+        dec_stock = av.should_decrement_product_stock(product.fulfillment_type, has_recipe)
+        rec_m = av.should_record_product_inventory_movement(product.fulfillment_type, has_recipe)
+
+        if dec_stock:
+            product.stock_quantity -= qty
+            session.add(product)
+
         if rec_m:
             session.add(
                 InventoryMovement(
@@ -209,20 +141,17 @@ def process_checkout(
                 )
             )
 
-        if has_recipe:
-            for consumption in recipe:
-                total_consumed = consumption.quantity_used * qty
-                ing = session.get(Ingredient, consumption.ingredient_id)
-                if not ing or not ing.is_active:
-                    continue
+        # Deduct ingredient stock for INGREDIENTS/BOTH mode using ProductConsumption
+        if has_recipe and product.fulfillment_type in ("INGREDIENTS", "BOTH"):
+            for c in consumptions:
                 session.add(
                     IngredientStockMovement(
-                        ingredient_id=consumption.ingredient_id,
+                        ingredient_id=c.ingredient_id,
                         system_user_id=system_user_id,
                         movement_type="SALE",
-                        quantity=total_consumed,
+                        quantity=c.quantity_used * qty,
                         related_order_id=order.order_id,
-                        notes=f"Venta orden #{order.order_id} · {ing.name}",
+                        notes=f"Venta orden #{order.order_id}",
                     )
                 )
 
