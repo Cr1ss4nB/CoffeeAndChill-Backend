@@ -19,10 +19,12 @@ class CheckoutRequest(BaseModel):
 class OrderItemResponse(BaseModel):
     item_id: int
     product_id: int
+    product_name: Optional[str] = None
     quantity: int
     unit_price: float
     subtotal: float
     status: str
+    special_instructions: Optional[str] = None
 
     model_config = {"from_attributes": True}
 
@@ -31,10 +33,13 @@ class OrderResponse(BaseModel):
     order_id: int
     customer_id: Optional[int] = None
     table_id: Optional[int] = None
+    table_number: Optional[int] = None
+    table_code: Optional[str] = None
     order_type: str
     status: str
     total_amount: float
     order_date: datetime
+    notes: Optional[str] = None
     items: List[OrderItemResponse]
 
     model_config = {"from_attributes": True}
