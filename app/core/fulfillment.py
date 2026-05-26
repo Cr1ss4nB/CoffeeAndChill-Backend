@@ -21,6 +21,5 @@ def resolve_effective_fulfillment(fulfillment_type: str, has_recipe: bool) -> st
     """
     if not has_recipe:
         return FulfillmentType.STOCK.value
-    if fulfillment_type == FulfillmentType.STOCK.value and has_recipe:
-        return FulfillmentType.BOTH.value
+    # Respect the admin's explicit choice — STOCK means STOCK even with a recipe
     return fulfillment_type
