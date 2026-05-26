@@ -4,9 +4,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.core.config import settings
-from app.routers import auth, catalog, employees, ingredients, inventory, products, tables, orders, workshops
+from app.routers import auth, catalog, categories, employees, ingredients, inventory, products, tables, orders, workshops, public, payments
 
-MEDIA_DIR = os.getenv("MEDIA_DIR", "/app/media")
+MEDIA_DIR = settings.MEDIA_DIR
 os.makedirs(os.path.join(MEDIA_DIR, "images"), exist_ok=True)
 
 app = FastAPI(
@@ -34,6 +34,8 @@ app.include_router(employees.router)
 app.include_router(tables.router)
 app.include_router(orders.router)
 app.include_router(workshops.router)
+app.include_router(public.router)
+app.include_router(payments.router)
 
 
 @app.get("/")

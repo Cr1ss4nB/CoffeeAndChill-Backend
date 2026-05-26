@@ -4,6 +4,8 @@ from typing import Any, Dict, List, Optional
 from sqlalchemy import JSON
 from sqlmodel import Column, Field, Relationship, SQLModel
 
+from app.core.time import utc_now
+
 
 class Customer(SQLModel, table=True):
     customer_id: Optional[int] = Field(default=None, primary_key=True)
@@ -14,7 +16,7 @@ class Customer(SQLModel, table=True):
     birth_date: Optional[date] = Field(default=None)
     loyalty_points: int = Field(default=0)
     is_registered: bool = Field(default=False)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utc_now)
 
     reservations: List["WorkshopReservation"] = Relationship(back_populates="customer")
 
@@ -27,7 +29,7 @@ class WorkshopReservation(SQLModel, table=True):
     quantity_slots: int = Field(default=1)
     total_price: Optional[float] = Field(default=None, decimal_places=2)
     status: str = Field(default="PENDING")
-    reservation_date: datetime = Field(default_factory=datetime.utcnow)
+    reservation_date: datetime = Field(default_factory=utc_now)
     special_requests: Optional[str] = Field(default=None)
 
     customer: Customer = Relationship(back_populates="reservations")
@@ -51,5 +53,5 @@ class ActivityLog(SQLModel, table=True):
     activity_type: str = Field(max_length=50)
     related_order_id: Optional[int] = Field(default=None, foreign_key="order.order_id")
     related_payment_id: Optional[int] = Field(default=None, foreign_key="payment.payment_id")
-    activity_date: datetime = Field(default_factory=datetime.utcnow)
+    activity_date: datetime = Field(default_factory=utc_now)
     activity_metadata: Optional[Any] = Field(default=None, sa_column=Column(JSON))

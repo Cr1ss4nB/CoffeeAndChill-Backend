@@ -3,6 +3,8 @@ from typing import List, Optional
 
 from sqlmodel import Field, Relationship, SQLModel
 
+from app.core.time import utc_now
+
 
 class Category(SQLModel, table=True):
     category_id: Optional[int] = Field(default=None, primary_key=True)
@@ -28,7 +30,7 @@ class Product(SQLModel, table=True):
     status: str = Field(default="ACTIVE")
     description: Optional[str] = Field(default=None)
     image_url: Optional[str] = Field(default=None)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utc_now)
 
     category: Category = Relationship(back_populates="products")
     # This relationship represents the ingredients needed for THIS product
