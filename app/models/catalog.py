@@ -1,3 +1,4 @@
+from __future__ import annotations
 from datetime import date, datetime, time
 from typing import List, Optional
 
@@ -7,7 +8,7 @@ from app.core.time import utc_now
 
 
 class Category(SQLModel, table=True):
-    category_id: Optional[int] = Field(default=None, primary_key=True)
+    category_id: int | None = Field(default=None, primary_key=True)
     category_name: str = Field(max_length=50, unique=True)
     type: str = Field(max_length=20)  # PRODUCT|WORKSHOP
     description: Optional[str] = Field(default=None)
@@ -18,7 +19,7 @@ class Category(SQLModel, table=True):
 
 
 class Product(SQLModel, table=True):
-    product_id: Optional[int] = Field(default=None, primary_key=True)
+    role_id: int | None = Field(default=None, primary_key=True)
     name: str = Field(max_length=100)
     category_id: int = Field(foreign_key="category.category_id")
     price: float = Field(decimal_places=2)
@@ -46,7 +47,7 @@ class Product(SQLModel, table=True):
 
 
 class RecipeItem(SQLModel, table=True):
-    recipe_item_id: Optional[int] = Field(default=None, primary_key=True)
+    recipe_item_id: int | None = Field(default=None, primary_key=True)
     product_id: int = Field(foreign_key="product.product_id")
     # ingredient_id refers to another Product that is marked as an ingredient (Insumo)
     ingredient_id: int = Field(foreign_key="product.product_id")
@@ -64,7 +65,7 @@ class RecipeItem(SQLModel, table=True):
 
 
 class Workshop(SQLModel, table=True):
-    workshop_id: Optional[int] = Field(default=None, primary_key=True)
+    workshop_id: int | None = Field(default=None, primary_key=True)
     name: str = Field(max_length=100)
     category_id: int = Field(foreign_key="category.category_id")
     description: Optional[str] = Field(default=None)
@@ -79,7 +80,7 @@ class Workshop(SQLModel, table=True):
 
 
 class WorkshopSchedule(SQLModel, table=True):
-    schedule_id: Optional[int] = Field(default=None, primary_key=True)
+    system_user_id: int | None = Field(default=None, primary_key=True)
     workshop_id: int = Field(foreign_key="workshop.workshop_id")
     schedule_date: date
     start_time: time

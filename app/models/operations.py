@@ -1,3 +1,4 @@
+from __future__ import annotations
 from datetime import datetime
 from typing import List, Optional
 
@@ -7,7 +8,7 @@ from app.core.time import utc_now
 
 
 class Order(SQLModel, table=True):
-    order_id: Optional[int] = Field(default=None, primary_key=True)
+    order_id: int | None = Field(default=None, primary_key=True)
     customer_id: Optional[int] = Field(default=None, foreign_key="customer.customer_id")
     system_user_id: int = Field(foreign_key="systemuser.system_user_id")
     table_id: Optional[int] = Field(default=None, foreign_key="tablespot.table_id")
@@ -15,7 +16,7 @@ class Order(SQLModel, table=True):
     order_type: str  # DINE_IN|TAKEAWAY|DELIVERY|WORKSHOP|MIXED
     status: str = Field(default="PENDING")
 
-    subtotal: float = Field(decimal_places=2)
+    subtotal: float = Field(default=0.0, sa_column_kwargs={"server_default": "0", "nullable": False}, decimal_places=2)
     tax_amount: float = Field(default=0, decimal_places=2)
     discount_amount: float = Field(default=0, decimal_places=2)
     total_amount: float = Field(decimal_places=2)
@@ -27,7 +28,7 @@ class Order(SQLModel, table=True):
 
 
 class OrderItem(SQLModel, table=True):
-    item_id: Optional[int] = Field(default=None, primary_key=True)
+    item_id: int | None = Field(default=None, primary_key=True)
     order_id: int = Field(foreign_key="order.order_id")
 
     product_id: Optional[int] = Field(default=None, foreign_key="product.product_id")
@@ -37,7 +38,7 @@ class OrderItem(SQLModel, table=True):
 
     quantity: int
     unit_price: float = Field(decimal_places=2)
-    subtotal: float = Field(decimal_places=2)
+    subtotal: float = Field(default_factory=lambda: 0.0, sa_column_kwargs={"server_default": "0", "nullable": False}, decimal_places=2)
 
     item_type: str  # PRODUCT|WORKSHOP
     status: str = Field(default="PENDING")
@@ -47,7 +48,7 @@ class OrderItem(SQLModel, table=True):
 
 
 class Payment(SQLModel, table=True):
-    payment_id: Optional[int] = Field(default=None, primary_key=True)
+    payment_id: int | None = Field(default=None, primary_key=True)
     order_id: int = Field(foreign_key="order.order_id")
     customer_id: Optional[int] = Field(default=None, foreign_key="customer.customer_id")
 
@@ -63,7 +64,7 @@ class Payment(SQLModel, table=True):
 
 
 class Invoice(SQLModel, table=True):
-    invoice_id: Optional[int] = Field(default=None, primary_key=True)
+    invoice_id: int | None = Field(default=None, primary_key=True)
     order_id: int = Field(unique=True, foreign_key="order.order_id")
     customer_id: Optional[int] = Field(default=None, foreign_key="customer.customer_id")
     payment_id: Optional[int] = Field(default=None, foreign_key="payment.payment_id")

@@ -20,7 +20,7 @@ def get_workshops(session: Session = Depends(get_db)):
     """Obtiene el catálogo de talleres con formato compatible para el frontend."""
     stmt = (
         select(Workshop)
-        .where(Workshop.is_active is True)
+        .where(Workshop.is_active == True)
         .options(selectinload(Workshop.schedules))
     )
     workshops = session.exec(stmt).all()
@@ -28,7 +28,8 @@ def get_workshops(session: Session = Depends(get_db)):
     result = []
     for w in workshops:
         w_dict = w.model_dump()
-        w_dict["id"] = str(w.workshop_id) 
+        w_dict["id"] = str(w.workshop_id)
+        w_dict["workshop_id"] = w.workshop_id
         
         # Calcular spots para el frontend
         total_available = sum(s.available_slots for s in w.schedules) if w.schedules else 0

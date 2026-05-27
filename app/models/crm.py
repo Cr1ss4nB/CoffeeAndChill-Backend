@@ -1,3 +1,4 @@
+from __future__ import annotations
 from datetime import date, datetime
 from typing import Any, Dict, List, Optional
 
@@ -8,7 +9,7 @@ from app.core.time import utc_now
 
 
 class Customer(SQLModel, table=True):
-    customer_id: Optional[int] = Field(default=None, primary_key=True)
+    customer_id: int | None = Field(default=None, primary_key=True)
     full_name: str = Field(max_length=100)
     email: Optional[str] = Field(default=None, max_length=100, unique=True)
     phone: Optional[str] = Field(default=None, max_length=20)
@@ -22,7 +23,7 @@ class Customer(SQLModel, table=True):
 
 
 class WorkshopReservation(SQLModel, table=True):
-    reservation_id: Optional[int] = Field(default=None, primary_key=True)
+    reservation_id: int | None = Field(default=None, primary_key=True)
     customer_id: int = Field(foreign_key="customer.customer_id")
     schedule_id: int = Field(foreign_key="workshopschedule.schedule_id")
     system_user_id: int = Field(foreign_key="systemuser.system_user_id")
@@ -48,7 +49,7 @@ class Notification(SQLModel, table=True):
 
 
 class ActivityLog(SQLModel, table=True):
-    log_id: Optional[int] = Field(default=None, primary_key=True)
+    log_id: int | None = Field(default=None, primary_key=True)
     customer_id: int = Field(foreign_key="customer.customer_id")
     activity_type: str = Field(max_length=50)
     related_order_id: Optional[int] = Field(default=None, foreign_key="order.order_id")
