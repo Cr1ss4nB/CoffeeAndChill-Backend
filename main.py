@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.core.config import settings
-from app.routers import auth, catalog, categories, employees, ingredients, inventory, products, tables, orders, workshops, public, payments
+from app.routers import auth, catalog, employees, ingredients, inventory, products, tables, orders, workshops, public, payments
 
 MEDIA_DIR = settings.MEDIA_DIR
 os.makedirs(os.path.join(MEDIA_DIR, "images"), exist_ok=True)
