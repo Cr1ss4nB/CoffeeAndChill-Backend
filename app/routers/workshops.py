@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlmodel import Session, select
+from sqlmodel import Session
 from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
@@ -11,6 +11,12 @@ from app.models.catalog import Workshop, WorkshopSchedule, Category
 from app.models.crm import WorkshopReservation, Customer
 from app.schemas.auth import UserResponse
 from app.schemas.workshops import WorkshopCreate, WorkshopResponse, WorkshopUpdate
+from app.services.workshop_service import (
+    create_workshop as service_create_workshop,
+    update_workshop as service_update_workshop,
+    get_available_workshops,
+    get_workshop_details,
+)
 
 router = APIRouter(prefix="/workshops", tags=["Workshops"])
 
@@ -61,32 +67,35 @@ def get_workshops(session: Session = Depends(get_db)):
 
 
 @router.post("", response_model=WorkshopResponse, status_code=status.HTTP_201_CREATED)
-def create_workshop(
+def create_workshop_endpoint(
     workshop_data: WorkshopCreate,
     session: Session = Depends(get_db),
     user: UserResponse = Depends(require_permission("catalog:manage")),
 ):
+    """Create a new workshop."""
     category = session.get(Category, workshop_data.category_id)
     if not category or category.type != "WORKSHOP":
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Categoría inválida o no corresponde a talleres.",
+            detail="Invalid category or not a workshop category.",
         )
 
     try:
-        workshop = Workshop(
-            name=workshop_data.name,
-            category_id=workshop_data.category_id,
-            description=workshop_data.description,
-            duration_minutes=workshop_data.duration_minutes,
-            max_capacity=workshop_data.max_capacity,
-            price=workshop_data.price,
-            instructor_name=workshop_data.instructor_name,
-            is_active=workshop_data.is_active,
-        )
-        session.add(workshop)
-        session.flush() # Para obtener el ID sin commitear aún
-
+        # Create workshop using service
+        data = {
+            "name": workshop_data.name,
+            "category_id": workshop_data.category_id,
+            "description": workshop_data.description,
+            "duration_minutes": workshop_data.duration_minutes,
+            "max_capacity": workshop_data.max_capacity,
+            "price": workshop_data.price,
+            "instructor_name": workshop_data.instructor_name,
+            "is_active": workshop_data.is_active,
+        }
+        
+        workshop = service_create_workshop(session, data)
+        
+        # Add schedules if provided
         if workshop_data.schedules:
             for sched in workshop_data.schedules:
                 schedule = WorkshopSchedule(
@@ -98,9 +107,11 @@ def create_workshop(
                     status=sched.status,
                 )
                 session.add(schedule)
-        
-        session.commit()
-        session.refresh(workshop)
+            session.commit()
+
+        return WorkshopResponse.model_validate(workshop)
+    except HTTPException:
+        raise
     except Exception as e:
         session.rollback()
         raise HTTPException(

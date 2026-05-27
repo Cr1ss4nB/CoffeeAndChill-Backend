@@ -60,7 +60,7 @@ def _seed_payment(session: Session, admin_id: int, amount: float = 100.0, tip: f
 # ---------------------------------------------------------------------------
 
 def test_payments_empty_db(client: TestClient, admin_headers: dict, test_data):
-    r = client.get("/payments", headers=admin_headers)
+    r = client.get("/api/v1/admin/payments", headers=admin_headers)
     assert r.status_code == 200
     data = r.json()
     assert data["payments"] == []
@@ -75,7 +75,7 @@ def test_payments_with_data_today(client: TestClient, session: Session, admin_he
     _seed_payment(session, admin.system_user_id, amount=200.0, tip=20.0)
     _seed_payment(session, admin.system_user_id, amount=150.0, tip=15.0)
 
-    r = client.get("/payments", headers=admin_headers)
+    r = client.get("/api/v1/admin/payments", headers=admin_headers)
     assert r.status_code == 200
     data = r.json()
     assert data["summary"]["count"] == 2
@@ -84,7 +84,7 @@ def test_payments_with_data_today(client: TestClient, session: Session, admin_he
 
 
 def test_payments_response_envelope_fields(client: TestClient, admin_headers: dict, test_data):
-    r = client.get("/payments", headers=admin_headers)
+    r = client.get("/api/v1/admin/payments", headers=admin_headers)
     assert r.status_code == 200
     data = r.json()
     assert "payments" in data
@@ -100,14 +100,14 @@ def test_payments_valid_date_filter(client: TestClient, session: Session, admin_
     admin = session.exec(select(SystemUser).where(SystemUser.email == "admin@example.com")).first()
     _seed_payment(session, admin.system_user_id)
 
-    r = client.get(f"/payments?date={today}", headers=admin_headers)
+    r = client.get(f"/api/v1/admin/payments?date={today}", headers=admin_headers)
     assert r.status_code == 200
     assert r.json()["date"] == today
 
 
 def test_payments_invalid_date_defaults_to_today(client: TestClient, admin_headers: dict, test_data):
     from datetime import date
-    r = client.get("/payments?date=not-a-date", headers=admin_headers)
+    r = client.get("/api/v1/admin/payments?date=not-a-date", headers=admin_headers)
     assert r.status_code == 200
     assert r.json()["date"] == date.today().isoformat()
 
@@ -117,7 +117,7 @@ def test_payments_pagination_limit(client: TestClient, session: Session, admin_h
     for _ in range(5):
         _seed_payment(session, admin.system_user_id)
 
-    r = client.get("/payments?limit=2&offset=0", headers=admin_headers)
+    r = client.get("/api/v1/admin/payments?limit=2&offset=0", headers=admin_headers)
     assert r.status_code == 200
     assert len(r.json()["payments"]) <= 2
 
@@ -126,6 +126,6 @@ def test_payments_pagination_offset_beyond_total(client: TestClient, session: Se
     admin = session.exec(select(SystemUser).where(SystemUser.email == "admin@example.com")).first()
     _seed_payment(session, admin.system_user_id)
 
-    r = client.get("/payments?offset=9999", headers=admin_headers)
+    r = client.get("/api/v1/admin/payments?offset=9999", headers=admin_headers)
     assert r.status_code == 200
     assert r.json()["payments"] == []

@@ -1,0 +1,31 @@
+"""
+Dockerfile para ejecutar tests y generar cobertura
+Uso: docker build -t coffeeandchill-test . && docker run --rm coffeeandchill-test
+"""
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Instalar dependencias del sistema
+RUN apt-get update && apt-get install -y \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copiar archivos de requisitos
+COPY requirements.txt .
+
+# Instalar dependencias de Python
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copiar el código de la aplicación
+COPY . .
+
+# Ejecutar tests y generar cobertura
+CMD ["bash", "-c", "\
+    echo '🧪 Ejecutando tests...' && \
+    pytest -v --tb=short && \
+    echo '📊 Generando cobertura...' && \
+    coverage xml && \
+    echo '✅ Cobertura generada en coverage.xml' && \
+    ls -lh coverage.xml \
+    "]

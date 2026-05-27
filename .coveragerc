@@ -1,0 +1,33 @@
+[run]
+branch = True
+source = app
+omit =
+    */tests/*
+    */site-packages/*
+    */__pycache__/*
+    */alembic/*
+    */migrations/*
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    raise AssertionError
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    if TYPE_CHECKING:
+    @abstractmethod
+    @abc.abstractmethod
+    except ImportError:
+    except Exception:
+    pass
+    
+skip_covered = False
+skip_empty = False
+precision = 2
+
+[html]
+directory = htmlcov
+
+[xml]
+output = coverage.xml

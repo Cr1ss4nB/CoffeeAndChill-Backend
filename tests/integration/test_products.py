@@ -54,7 +54,7 @@ def existing_product(session: Session, category: Category, test_data) -> Product
 # ---------------------------------------------------------------------------
 
 def test_create_product_success(client: TestClient, admin_headers: dict, category: Category, test_data):
-    r = client.post("/products", headers=admin_headers, json={
+    r = client.post("/api/v1/admin/products", headers=admin_headers, json={
         "name": "Cappuccino",
         "category_id": category.category_id,
         "price": 120.0,
@@ -69,7 +69,7 @@ def test_create_product_success(client: TestClient, admin_headers: dict, categor
 
 
 def test_create_product_price_zero_returns_400(client: TestClient, admin_headers: dict, category: Category, test_data):
-    r = client.post("/products", headers=admin_headers, json={
+    r = client.post("/api/v1/admin/products", headers=admin_headers, json={
         "name": "Bad",
         "category_id": category.category_id,
         "price": 0,
@@ -80,7 +80,7 @@ def test_create_product_price_zero_returns_400(client: TestClient, admin_headers
 
 
 def test_create_product_negative_stock_returns_400(client: TestClient, admin_headers: dict, category: Category, test_data):
-    r = client.post("/products", headers=admin_headers, json={
+    r = client.post("/api/v1/admin/products", headers=admin_headers, json={
         "name": "Bad",
         "category_id": category.category_id,
         "price": 100.0,
@@ -91,7 +91,7 @@ def test_create_product_negative_stock_returns_400(client: TestClient, admin_hea
 
 
 def test_create_product_invalid_category_returns_404(client: TestClient, admin_headers: dict, test_data):
-    r = client.post("/products", headers=admin_headers, json={
+    r = client.post("/api/v1/admin/products", headers=admin_headers, json={
         "name": "Bad",
         "category_id": 99999,
         "price": 100.0,
@@ -102,7 +102,7 @@ def test_create_product_invalid_category_returns_404(client: TestClient, admin_h
 
 
 def test_create_product_invalid_fulfillment_returns_400(client: TestClient, admin_headers: dict, category: Category, test_data):
-    r = client.post("/products", headers=admin_headers, json={
+    r = client.post("/api/v1/admin/products", headers=admin_headers, json={
         "name": "Bad",
         "category_id": category.category_id,
         "price": 100.0,
@@ -117,7 +117,7 @@ def test_create_product_invalid_fulfillment_returns_400(client: TestClient, admi
 # ---------------------------------------------------------------------------
 
 def test_patch_product_success(client: TestClient, admin_headers: dict, existing_product: Product, test_data):
-    r = client.patch(f"/products/{existing_product.product_id}", headers=admin_headers, json={
+    r = client.patch(f"/api/v1/admin/products/{existing_product.product_id}", headers=admin_headers, json={
         "name": "Espresso Updated",
     })
     assert r.status_code == 200
@@ -128,22 +128,22 @@ def test_patch_product_success(client: TestClient, admin_headers: dict, existing
 
 
 def test_patch_product_not_found_returns_404(client: TestClient, admin_headers: dict, test_data):
-    r = client.patch("/products/99999", headers=admin_headers, json={"name": "X"})
+    r = client.patch("/api/v1/admin/products/99999", headers=admin_headers, json={"name": "X"})
     assert r.status_code == 404
 
 
 def test_patch_product_invalid_price_returns_400(client: TestClient, admin_headers: dict, existing_product: Product, test_data):
-    r = client.patch(f"/products/{existing_product.product_id}", headers=admin_headers, json={"price": -5.0})
+    r = client.patch(f"/api/v1/admin/products/{existing_product.product_id}", headers=admin_headers, json={"price": -5.0})
     assert r.status_code == 400
 
 
 def test_patch_product_invalid_category_returns_404(client: TestClient, admin_headers: dict, existing_product: Product, test_data):
-    r = client.patch(f"/products/{existing_product.product_id}", headers=admin_headers, json={"category_id": 99999})
+    r = client.patch(f"/api/v1/admin/products/{existing_product.product_id}", headers=admin_headers, json={"category_id": 99999})
     assert r.status_code == 404
 
 
 def test_patch_product_invalid_fulfillment_returns_400(client: TestClient, admin_headers: dict, existing_product: Product, test_data):
-    r = client.patch(f"/products/{existing_product.product_id}", headers=admin_headers, json={"fulfillment_type": "WRONG"})
+    r = client.patch(f"/api/v1/admin/products/{existing_product.product_id}", headers=admin_headers, json={"fulfillment_type": "WRONG"})
     assert r.status_code == 400
 
 
@@ -152,24 +152,24 @@ def test_patch_product_invalid_fulfillment_returns_400(client: TestClient, admin
 # ---------------------------------------------------------------------------
 
 def test_patch_product_status_inactive(client: TestClient, admin_headers: dict, existing_product: Product, test_data):
-    r = client.patch(f"/products/{existing_product.product_id}/status", headers=admin_headers, json={"status": "INACTIVE"})
+    r = client.patch(f"/api/v1/admin/products/{existing_product.product_id}/status", headers=admin_headers, json={"status": "INACTIVE"})
     assert r.status_code == 200
     assert r.json()["status"] == "INACTIVE"
 
 
 def test_patch_product_status_active(client: TestClient, admin_headers: dict, existing_product: Product, test_data):
-    r = client.patch(f"/products/{existing_product.product_id}/status", headers=admin_headers, json={"status": "ACTIVE"})
+    r = client.patch(f"/api/v1/admin/products/{existing_product.product_id}/status", headers=admin_headers, json={"status": "ACTIVE"})
     assert r.status_code == 200
     assert r.json()["status"] == "ACTIVE"
 
 
 def test_patch_product_status_invalid_returns_400(client: TestClient, admin_headers: dict, existing_product: Product, test_data):
-    r = client.patch(f"/products/{existing_product.product_id}/status", headers=admin_headers, json={"status": "DELETED"})
+    r = client.patch(f"/api/v1/admin/products/{existing_product.product_id}/status", headers=admin_headers, json={"status": "DELETED"})
     assert r.status_code == 400
 
 
 def test_patch_product_status_not_found_returns_404(client: TestClient, admin_headers: dict, test_data):
-    r = client.patch("/products/99999/status", headers=admin_headers, json={"status": "ACTIVE"})
+    r = client.patch("/api/v1/admin/products/99999/status", headers=admin_headers, json={"status": "ACTIVE"})
     assert r.status_code == 404
 
 
@@ -180,7 +180,7 @@ def test_patch_product_status_not_found_returns_404(client: TestClient, admin_he
 def test_upload_image_valid_jpeg(client: TestClient, admin_headers: dict, test_data):
     with patch("app.routers.products.os.makedirs"), patch("builtins.open", MagicMock()):
         r = client.post(
-            "/products/upload-image",
+            "/api/v1/admin/products/upload-image",
             headers=admin_headers,
             files={"file": ("photo.jpg", io.BytesIO(b"fake-image-data"), "image/jpeg")},
         )
@@ -191,7 +191,7 @@ def test_upload_image_valid_jpeg(client: TestClient, admin_headers: dict, test_d
 
 def test_upload_image_invalid_mime_returns_400(client: TestClient, admin_headers: dict, test_data):
     r = client.post(
-        "/products/upload-image",
+        "/api/v1/admin/products/upload-image",
         headers=admin_headers,
         files={"file": ("doc.pdf", io.BytesIO(b"data"), "application/pdf")},
     )
@@ -201,7 +201,7 @@ def test_upload_image_invalid_mime_returns_400(client: TestClient, admin_headers
 def test_upload_image_too_large_returns_400(client: TestClient, admin_headers: dict, test_data):
     big_data = b"x" * (5 * 1024 * 1024 + 1)  # 5MB + 1 byte
     r = client.post(
-        "/products/upload-image",
+        "/api/v1/admin/products/upload-image",
         headers=admin_headers,
         files={"file": ("big.jpg", io.BytesIO(big_data), "image/jpeg")},
     )

@@ -121,3 +121,37 @@ def test_data_fixture(session: Session):
     )
     session.add(customer)
     session.commit()
+
+
+# ── Auth Helpers ──────────────────────────────────────────────────────────────
+
+def admin_login(client: TestClient) -> dict:
+    """Login as admin and return token."""
+    response = client.post(
+        "/auth/login",
+        json={"email": "admin@example.com", "password": "adminpass"},
+    )
+    assert response.status_code == 200
+    return response.json()
+
+
+def customer_login(client: TestClient) -> dict:
+    """Login as customer and return token."""
+    response = client.post(
+        "/auth/login",
+        json={"email": "customer@example.com", "password": "customerpass"},
+    )
+    assert response.status_code == 200
+    return response.json()
+
+
+def get_admin_headers(client: TestClient) -> dict:
+    """Get authorization headers for admin."""
+    token = admin_login(client)
+    return {"Authorization": f"Bearer {token['access_token']}"}
+
+
+def get_customer_headers(client: TestClient) -> dict:
+    """Get authorization headers for customer."""
+    token = customer_login(client)
+    return {"Authorization": f"Bearer {token['access_token']}"}

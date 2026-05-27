@@ -110,7 +110,7 @@ def require_permission(permission: str):
             raise HTTPException(status_code=500, detail="Permiso no definido en el sistema")
 
         # Admin siempre puede continuar.
-        if (user.role or "").lower() == "admin":
+        if user.role and user.role.lower() == "admin":
             return user
 
         sys_user = session.get(SystemUser, user.id)

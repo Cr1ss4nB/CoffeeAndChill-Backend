@@ -50,7 +50,7 @@ def second_employee(session: Session, test_data) -> SystemUser:
 # ---------------------------------------------------------------------------
 
 def test_get_employees_returns_200_list(client: TestClient, admin_headers: dict, test_data):
-    r = client.get("/admin/employees", headers=admin_headers)
+    r = client.get("/api/v1/admin/employees", headers=admin_headers)
     assert r.status_code == 200
     data = r.json()
     assert isinstance(data, list)
@@ -62,7 +62,7 @@ def test_get_employees_returns_200_list(client: TestClient, admin_headers: dict,
 
 
 def test_get_employees_no_token_returns_403(client: TestClient, test_data):
-    r = client.get("/admin/employees")
+    r = client.get("/api/v1/admin/employees")
     assert r.status_code == 403
 
 
@@ -71,7 +71,7 @@ def test_get_employees_no_token_returns_403(client: TestClient, test_data):
 # ---------------------------------------------------------------------------
 
 def test_create_employee_success(client: TestClient, admin_headers: dict, test_data):
-    r = client.post("/admin/employees", headers=admin_headers, json={
+    r = client.post("/api/v1/admin/employees", headers=admin_headers, json={
         "full_name": "Maria Cashier",
         "email": "maria@cafe.com",
         "password": "pass1234",
@@ -85,7 +85,7 @@ def test_create_employee_success(client: TestClient, admin_headers: dict, test_d
 
 
 def test_create_employee_duplicate_email_returns_409(client: TestClient, admin_headers: dict, test_data):
-    r = client.post("/admin/employees", headers=admin_headers, json={
+    r = client.post("/api/v1/admin/employees", headers=admin_headers, json={
         "full_name": "Dup",
         "email": "admin@example.com",
         "password": "pass",
@@ -95,7 +95,7 @@ def test_create_employee_duplicate_email_returns_409(client: TestClient, admin_h
 
 
 def test_create_employee_invalid_role_returns_400(client: TestClient, admin_headers: dict, test_data):
-    r = client.post("/admin/employees", headers=admin_headers, json={
+    r = client.post("/api/v1/admin/employees", headers=admin_headers, json={
         "full_name": "Bad Role",
         "email": "badrole@cafe.com",
         "password": "pass",
@@ -105,7 +105,7 @@ def test_create_employee_invalid_role_returns_400(client: TestClient, admin_head
 
 
 def test_create_employee_no_token_returns_403(client: TestClient, test_data):
-    r = client.post("/admin/employees", json={
+    r = client.post("/api/v1/admin/employees", json={
         "full_name": "X",
         "email": "x@cafe.com",
         "password": "p",
@@ -119,7 +119,7 @@ def test_create_employee_no_token_returns_403(client: TestClient, test_data):
 # ---------------------------------------------------------------------------
 
 def test_update_employee_success(client: TestClient, admin_headers: dict, second_employee: SystemUser, test_data):
-    r = client.put(f"/admin/employees/{second_employee.system_user_id}", headers=admin_headers, json={
+    r = client.put(f"/api/v1/admin/employees/{second_employee.system_user_id}", headers=admin_headers, json={
         "full_name": "Juan Updated",
     })
     assert r.status_code == 200
@@ -129,12 +129,12 @@ def test_update_employee_success(client: TestClient, admin_headers: dict, second
 
 
 def test_update_employee_not_found_returns_404(client: TestClient, admin_headers: dict, test_data):
-    r = client.put("/admin/employees/99999", headers=admin_headers, json={"full_name": "X"})
+    r = client.put("/api/v1/admin/employees/99999", headers=admin_headers, json={"full_name": "X"})
     assert r.status_code == 404
 
 
 def test_update_employee_duplicate_email_returns_409(client: TestClient, admin_headers: dict, second_employee: SystemUser, test_data):
-    r = client.put(f"/admin/employees/{second_employee.system_user_id}", headers=admin_headers, json={
+    r = client.put(f"/api/v1/admin/employees/{second_employee.system_user_id}", headers=admin_headers, json={
         "email": "admin@example.com",
     })
     assert r.status_code == 409
@@ -145,7 +145,7 @@ def test_update_employee_duplicate_email_returns_409(client: TestClient, admin_h
 # ---------------------------------------------------------------------------
 
 def test_patch_employee_status_success(client: TestClient, admin_headers: dict, second_employee: SystemUser, test_data):
-    r = client.patch(f"/admin/employees/{second_employee.system_user_id}/status", headers=admin_headers, json={
+    r = client.patch(f"/api/v1/admin/employees/{second_employee.system_user_id}/status", headers=admin_headers, json={
         "is_active": False,
     })
     assert r.status_code == 200
@@ -153,14 +153,14 @@ def test_patch_employee_status_success(client: TestClient, admin_headers: dict, 
 
 
 def test_patch_employee_status_not_found_returns_404(client: TestClient, admin_headers: dict, test_data):
-    r = client.patch("/admin/employees/99999/status", headers=admin_headers, json={"is_active": False})
+    r = client.patch("/api/v1/admin/employees/99999/status", headers=admin_headers, json={"is_active": False})
     assert r.status_code == 404
 
 
 def test_patch_employee_status_self_returns_400(client: TestClient, session: Session, admin_headers: dict, test_data):
     """Admin cannot change their own status."""
     admin = session.exec(select(SystemUser).where(SystemUser.email == "admin@example.com")).first()
-    r = client.patch(f"/admin/employees/{admin.system_user_id}/status", headers=admin_headers, json={
+    r = client.patch(f"/api/v1/admin/employees/{admin.system_user_id}/status", headers=admin_headers, json={
         "is_active": False,
     })
     assert r.status_code == 400

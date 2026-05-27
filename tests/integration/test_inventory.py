@@ -81,7 +81,7 @@ def low_stock_product(session: Session, category: Category, test_data) -> Produc
 # ---------------------------------------------------------------------------
 
 def test_get_inventory_pagination(client: TestClient, admin_headers: dict, product_with_stock, test_data):
-    r = client.get("/inventory?page=1&limit=5", headers=admin_headers)
+    r = client.get("/api/v1/admin/inventory?page=1&limit=5", headers=admin_headers)
     assert r.status_code == 200
     data = r.json()
     assert "items" in data
@@ -90,13 +90,13 @@ def test_get_inventory_pagination(client: TestClient, admin_headers: dict, produ
 
 
 def test_get_inventory_page_beyond_last_returns_empty(client: TestClient, admin_headers: dict, test_data):
-    r = client.get("/inventory?page=9999&limit=10", headers=admin_headers)
+    r = client.get("/api/v1/admin/inventory?page=9999&limit=10", headers=admin_headers)
     assert r.status_code == 200
     assert r.json()["items"] == []
 
 
 def test_get_inventory_category_filter(client: TestClient, admin_headers: dict, product_with_stock, category, test_data):
-    r = client.get(f"/inventory?category_id={category.category_id}", headers=admin_headers)
+    r = client.get(f"/api/v1/admin/inventory?category_id={category.category_id}", headers=admin_headers)
     assert r.status_code == 200
     items = r.json()["items"]
     for item in items:
@@ -104,7 +104,7 @@ def test_get_inventory_category_filter(client: TestClient, admin_headers: dict, 
 
 
 def test_get_inventory_low_stock_count(client: TestClient, admin_headers: dict, low_stock_product, test_data):
-    r = client.get("/inventory", headers=admin_headers)
+    r = client.get("/api/v1/admin/inventory", headers=admin_headers)
     assert r.status_code == 200
     assert r.json()["low_stock_count"] >= 1
 
@@ -114,7 +114,7 @@ def test_get_inventory_low_stock_count(client: TestClient, admin_headers: dict, 
 # ---------------------------------------------------------------------------
 
 def test_inventory_adjustment_positive_in(client: TestClient, admin_headers: dict, product_with_stock, test_data):
-    r = client.post("/inventory/adjustments", headers=admin_headers, json={
+    r = client.post("/api/v1/admin/inventory/adjustments", headers=admin_headers, json={
         "product_id": product_with_stock.product_id,
         "quantity": 10,
         "reason": "RECEIPT",
@@ -125,7 +125,7 @@ def test_inventory_adjustment_positive_in(client: TestClient, admin_headers: dic
 
 
 def test_inventory_adjustment_negative_out(client: TestClient, admin_headers: dict, product_with_stock, test_data):
-    r = client.post("/inventory/adjustments", headers=admin_headers, json={
+    r = client.post("/api/v1/admin/inventory/adjustments", headers=admin_headers, json={
         "product_id": product_with_stock.product_id,
         "quantity": -10,
         "reason": "WASTE",
@@ -135,7 +135,7 @@ def test_inventory_adjustment_negative_out(client: TestClient, admin_headers: di
 
 
 def test_inventory_adjustment_insufficient_stock_returns_400(client: TestClient, admin_headers: dict, product_with_stock, test_data):
-    r = client.post("/inventory/adjustments", headers=admin_headers, json={
+    r = client.post("/api/v1/admin/inventory/adjustments", headers=admin_headers, json={
         "product_id": product_with_stock.product_id,
         "quantity": -9999,
         "reason": "WASTE",
@@ -144,7 +144,7 @@ def test_inventory_adjustment_insufficient_stock_returns_400(client: TestClient,
 
 
 def test_inventory_adjustment_product_not_found_returns_404(client: TestClient, admin_headers: dict, test_data):
-    r = client.post("/inventory/adjustments", headers=admin_headers, json={
+    r = client.post("/api/v1/admin/inventory/adjustments", headers=admin_headers, json={
         "product_id": 99999,
         "quantity": 10,
         "reason": "RECEIPT",
@@ -157,7 +157,7 @@ def test_inventory_adjustment_product_not_found_returns_404(client: TestClient, 
 # ---------------------------------------------------------------------------
 
 def test_get_movements_no_filter(client: TestClient, admin_headers: dict, product_with_stock, test_data):
-    r = client.get("/inventory/movements", headers=admin_headers)
+    r = client.get("/api/v1/admin/inventory/movements", headers=admin_headers)
     assert r.status_code == 200
     data = r.json()
     assert "items" in data
@@ -165,14 +165,14 @@ def test_get_movements_no_filter(client: TestClient, admin_headers: dict, produc
 
 
 def test_get_movements_movement_type_filter(client: TestClient, admin_headers: dict, product_with_stock, test_data):
-    r = client.get("/inventory/movements?movement_type=IN", headers=admin_headers)
+    r = client.get("/api/v1/admin/inventory/movements?movement_type=IN", headers=admin_headers)
     assert r.status_code == 200
     for item in r.json()["items"]:
         assert item["movement_type"] == "IN"
 
 
 def test_get_movements_product_id_filter(client: TestClient, admin_headers: dict, product_with_stock, test_data):
-    r = client.get(f"/inventory/movements?product_id={product_with_stock.product_id}", headers=admin_headers)
+    r = client.get(f"/api/v1/admin/inventory/movements?product_id={product_with_stock.product_id}", headers=admin_headers)
     assert r.status_code == 200
     for item in r.json()["items"]:
         assert item["product_id"] == product_with_stock.product_id
@@ -181,12 +181,12 @@ def test_get_movements_product_id_filter(client: TestClient, admin_headers: dict
 def test_get_movements_date_filter(client: TestClient, admin_headers: dict, product_with_stock, test_data):
     from datetime import date
     today = date.today().isoformat()
-    r = client.get(f"/inventory/movements?start_date={today}&end_date={today}", headers=admin_headers)
+    r = client.get(f"/api/v1/admin/inventory/movements?start_date={today}&end_date={today}", headers=admin_headers)
     assert r.status_code == 200
     assert "items" in r.json()
 
 
 def test_get_movements_pagination(client: TestClient, admin_headers: dict, product_with_stock, test_data):
-    r = client.get("/inventory/movements?page=1&limit=1", headers=admin_headers)
+    r = client.get("/api/v1/admin/inventory/movements?page=1&limit=1", headers=admin_headers)
     assert r.status_code == 200
     assert len(r.json()["items"]) <= 1

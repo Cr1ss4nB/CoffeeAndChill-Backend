@@ -42,7 +42,7 @@ def _employee_token(client: TestClient, session: Session) -> str:
 
 def test_get_tables_empty(client: TestClient, test_data):
     token = _admin_token(client)
-    response = client.get("/tables", headers={"Authorization": f"Bearer {token}"})
+    response = client.get("/api/v1/admin/tables", headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 200
     assert response.json() == []
 
@@ -50,7 +50,7 @@ def test_create_table_success(client: TestClient, session: Session, test_data):
     token = _admin_token(client)
     
     payload = {"table_number": 5, "capacity": 4, "label": "Mesa Principal"}
-    response = client.post("/tables", headers={"Authorization": f"Bearer {token}"}, json=payload)
+    response = client.post("/api/v1/admin/tables", headers={"Authorization": f"Bearer {token}"}, json=payload)
     assert response.status_code == 201
     data = response.json()
     assert data["table_number"] == 5
@@ -60,7 +60,7 @@ def test_create_table_success(client: TestClient, session: Session, test_data):
     assert data["status"] == "FREE"
 
     # Test conflict
-    response_conflict = client.post("/tables", headers={"Authorization": f"Bearer {token}"}, json=payload)
+    response_conflict = client.post("/api/v1/admin/tables", headers={"Authorization": f"Bearer {token}"}, json=payload)
     assert response_conflict.status_code == 409
 
 def test_update_table(client: TestClient, session: Session, test_data):
@@ -77,23 +77,23 @@ def test_update_table(client: TestClient, session: Session, test_data):
 
     # Update table1 capacity and status
     update_payload = {"capacity": 6, "status": "OCCUPIED"}
-    response = client.put(f"/tables/{table1.table_id}", headers={"Authorization": f"Bearer {token}"}, json=update_payload)
+    response = client.put(f"/api/v1/admin/tables/{table1.table_id}", headers={"Authorization": f"Bearer {token}"}, json=update_payload)
     assert response.status_code == 200
     assert response.json()["capacity"] == 6
     assert response.json()["status"] == "OCCUPIED"
 
     # Try invalid status
     invalid_payload = {"status": "INVALID_STATUS"}
-    response_invalid = client.put(f"/tables/{table1.table_id}", headers={"Authorization": f"Bearer {token}"}, json=invalid_payload)
+    response_invalid = client.put(f"/api/v1/admin/tables/{table1.table_id}", headers={"Authorization": f"Bearer {token}"}, json=invalid_payload)
     assert response_invalid.status_code == 400
 
     # Update table_number to conflict with table2
     conflict_payload = {"table_number": 11}
-    response_conflict = client.put(f"/tables/{table1.table_id}", headers={"Authorization": f"Bearer {token}"}, json=conflict_payload)
+    response_conflict = client.put(f"/api/v1/admin/tables/{table1.table_id}", headers={"Authorization": f"Bearer {token}"}, json=conflict_payload)
     assert response_conflict.status_code == 409
 
     # Update to non-existent table
-    response_missing = client.put("/tables/9999", headers={"Authorization": f"Bearer {token}"}, json={"capacity": 5})
+    response_missing = client.put("/api/v1/admin/tables/9999", headers={"Authorization": f"Bearer {token}"}, json={"capacity": 5})
     assert response_missing.status_code == 404
 
 def test_delete_table(client: TestClient, session: Session, test_data):
@@ -104,7 +104,7 @@ def test_delete_table(client: TestClient, session: Session, test_data):
     session.commit()
     session.refresh(table)
 
-    response = client.delete(f"/tables/{table.table_id}", headers={"Authorization": f"Bearer {token}"})
+    response = client.delete(f"/api/v1/admin/tables/{table.table_id}", headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 200
     assert response.json()["message"] == "Mesa desactivada exitosamente"
 
@@ -113,7 +113,7 @@ def test_delete_table(client: TestClient, session: Session, test_data):
     assert table.is_active is False
 
     # Delete non-existent
-    response_missing = client.delete("/tables/9999", headers={"Authorization": f"Bearer {token}"})
+    response_missing = client.delete("/api/v1/admin/tables/9999", headers={"Authorization": f"Bearer {token}"})
     assert response_missing.status_code == 404
 
 def test_close_table_and_qr(client: TestClient, session: Session, test_data):
@@ -170,7 +170,7 @@ def test_close_table_and_qr(client: TestClient, session: Session, test_data):
 
     # 4. Close table via employee endpoint
     close_payload = {"payment_method": "CARD", "tip_amount": 2.0}
-    response = client.post(f"/tables/{table.table_id}/close", headers={"Authorization": f"Bearer {emp_token}"}, json=close_payload)
+    response = client.post(f"/api/v1/admin/tables/{table.table_id}/close", headers={"Authorization": f"Bearer {emp_token}"}, json=close_payload)
     assert response.status_code == 200
     data = response.json()
     assert data["table_id"] == table.table_id
@@ -184,18 +184,18 @@ def test_close_table_and_qr(client: TestClient, session: Session, test_data):
     assert table.status == "FREE"
 
     # Try closing table that is not occupied
-    response_not_occupied = client.post(f"/tables/{table.table_id}/close", headers={"Authorization": f"Bearer {emp_token}"}, json=close_payload)
+    response_not_occupied = client.post(f"/api/v1/admin/tables/{table.table_id}/close", headers={"Authorization": f"Bearer {emp_token}"}, json=close_payload)
     assert response_not_occupied.status_code == 400
 
     # Close non-existent table
-    response_missing = client.post("/tables/9999/close", headers={"Authorization": f"Bearer {emp_token}"}, json=close_payload)
+    response_missing = client.post("/api/v1/admin/tables/9999/close", headers={"Authorization": f"Bearer {emp_token}"}, json=close_payload)
     assert response_missing.status_code == 404
 
     # 5. Generate QR Code
-    response_qr = client.get(f"/tables/{table.table_id}/qr", headers={"Authorization": f"Bearer {admin_token}"})
+    response_qr = client.get(f"/api/v1/admin/tables/{table.table_id}/qr", headers={"Authorization": f"Bearer {admin_token}"})
     assert response_qr.status_code == 200
     assert response_qr.headers["content-type"] == "image/png"
 
     # Generate QR Code for missing table
-    response_qr_missing = client.get("/tables/9999/qr", headers={"Authorization": f"Bearer {admin_token}"})
+    response_qr_missing = client.get("/api/v1/admin/tables/9999/qr", headers={"Authorization": f"Bearer {admin_token}"})
     assert response_qr_missing.status_code == 404

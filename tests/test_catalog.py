@@ -1,20 +1,21 @@
 from fastapi.testclient import TestClient
+from tests.conftest import get_admin_headers
 
 
 def test_get_categories_empty(client: TestClient):
-    response = client.get("/catalog/categories")
+    response = client.get("/api/v1/catalog/categories")
     assert response.status_code == 200
     assert response.json() == []
 
 
 def test_get_products_empty(client: TestClient):
-    response = client.get("/catalog/products")
+    response = client.get("/api/v1/catalog/products")
     assert response.status_code == 200
     assert response.json() == []
 
 
 def test_get_product_not_found(client: TestClient):
-    response = client.get("/catalog/products/999")
+    response = client.get("/api/v1/catalog/products/999")
     assert response.status_code == 404
     assert response.json()["detail"] == "Producto no encontrado"
 
@@ -39,13 +40,13 @@ def test_catalog_with_data(client: TestClient, session):
     session.refresh(prod)
 
     # Test get category
-    resp_cat = client.get("/catalog/categories")
+    resp_cat = client.get("/api/v1/catalog/categories")
     assert resp_cat.status_code == 200
     assert len(resp_cat.json()) == 1
     assert resp_cat.json()[0]["category_name"] == "Cat Test"
 
     # Test get products
-    resp_prod = client.get("/catalog/products")
+    resp_prod = client.get("/api/v1/catalog/products")
     assert resp_prod.status_code == 200
     assert len(resp_prod.json()) == 1
     row = resp_prod.json()[0]
@@ -54,7 +55,7 @@ def test_catalog_with_data(client: TestClient, session):
     assert row["fulfillment_type"] == "STOCK"
 
     # Test get product specific
-    resp_detail = client.get(f"/catalog/products/{prod.product_id}")
+    resp_detail = client.get(f"/api/v1/catalog/products/{prod.product_id}")
     assert resp_detail.status_code == 200
     assert resp_detail.json()["name"] == "Prod Test"
     assert resp_detail.json()["category"]["category_name"] == "Cat Test"

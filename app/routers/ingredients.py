@@ -1,7 +1,7 @@
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlmodel import Session, func, select, case
+from sqlmodel import Session, select
 
 from app.core.database import get_db
 from app.core.dependencies import require_permission
@@ -17,55 +17,22 @@ from app.schemas.inventory import (
     ConsumptionItemResponse,
     ConsumptionUpsertRequest,
 )
+from app.services.inventory_service import (
+    get_current_stock,
+    record_movement,
+    get_low_stock_items,
+)
+from app.services.availability import get_ingredient_current_stock
 
 router = APIRouter(prefix="/ingredients", tags=["Ingredients"])
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-def _calc_stock(session: Session, ingredient_id: int) -> float:
-    """Compute current stock for one ingredient from its movement history."""
-    result = session.exec(
-        select(
-            func.coalesce(
-                func.sum(
-                    case(
-                        (IngredientStockMovement.movement_type == "IN", IngredientStockMovement.quantity),
-                        (
-                            IngredientStockMovement.movement_type.in_(["OUT", "SALE", "WASTE"]),
-                            -IngredientStockMovement.quantity,
-                        ),
-                        else_=0,
-                    )
-                ),
-                0,
-            )
-        ).where(IngredientStockMovement.ingredient_id == ingredient_id)
-    ).one()
-    return float(result)
-
-
 def _bulk_stock_map(session: Session) -> dict[int, float]:
     """Return {ingredient_id: current_stock} for all ingredients in one query."""
-    rows = session.exec(
-        select(
-            IngredientStockMovement.ingredient_id,
-            func.coalesce(
-                func.sum(
-                    case(
-                        (IngredientStockMovement.movement_type == "IN", IngredientStockMovement.quantity),
-                        (
-                            IngredientStockMovement.movement_type.in_(["OUT", "SALE", "WASTE"]),
-                            -IngredientStockMovement.quantity,
-                        ),
-                        else_=0,
-                    )
-                ),
-                0,
-            ).label("stock"),
-        ).group_by(IngredientStockMovement.ingredient_id)
-    ).all()
-    return {r.ingredient_id: float(r.stock) for r in rows}
+    ingredients = session.exec(select(Ingredient)).all()
+    return {i.ingredient_id: get_current_stock(session, i.ingredient_id) for i in ingredients}
 
 
 def _to_response(ingredient: Ingredient, stock: float) -> IngredientResponse:
@@ -124,7 +91,7 @@ def get_ingredient(
     ingredient = session.get(Ingredient, ingredient_id)
     if not ingredient:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Insumo no encontrado")
-    stock = _calc_stock(session, ingredient_id)
+    stock = get_ingredient_current_stock(session, ingredient_id)
     return _to_response(ingredient, stock)
 
 
@@ -143,7 +110,7 @@ def update_ingredient(
     session.add(ingredient)
     session.commit()
     session.refresh(ingredient)
-    stock = _calc_stock(session, ingredient_id)
+    stock = get_ingredient_current_stock(session, ingredient_id)
     return _to_response(ingredient, stock)
 
 
@@ -159,7 +126,7 @@ def adjust_ingredient_stock(
     if not ingredient:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Insumo no encontrado")
 
-    current_stock = _calc_stock(session, adjustment.ingredient_id)
+    current_stock = get_ingredient_current_stock(session, adjustment.ingredient_id)
     new_stock = current_stock + adjustment.quantity
     if new_stock < 0:
         raise HTTPException(

@@ -68,7 +68,7 @@ def test_workshop_crud_and_reservations(client: TestClient, session: Session, te
         ],
     }
     r = client.post(
-        "/workshops",
+        "/api/v1/workshops",
         headers={"Authorization": f"Bearer {admin_token}"},
         json=payload,
     )
@@ -78,7 +78,7 @@ def test_workshop_crud_and_reservations(client: TestClient, session: Session, te
     schedule_id = workshop_resp["schedules"][0]["schedule_id"]
 
     # 3️⃣ Get workshops list – ensure transformed fields exist
-    r = client.get("/workshops", headers={"Authorization": f"Bearer {admin_token}"})
+    r = client.get("/api/v1/workshops", headers={"Authorization": f"Bearer {admin_token}"})
     assert r.status_code == 200
     data = r.json()
     assert any(w["workshop_id"] == workshop_id for w in data)
@@ -90,7 +90,7 @@ def test_workshop_crud_and_reservations(client: TestClient, session: Session, te
     # 4️⃣ Update workshop
     update_payload = {"price": 20.0, "max_capacity": 6}
     r = client.put(
-        f"/workshops/{workshop_id}",
+        f"/api/v1/workshops/{workshop_id}",
         headers={"Authorization": f"Bearer {admin_token}"},
         json=update_payload,
     )
@@ -108,7 +108,7 @@ def test_workshop_crud_and_reservations(client: TestClient, session: Session, te
         "attendees": 2,
     }
     r = client.post(
-        f"/workshops/{workshop_id}/reservations",
+        f"/api/v1/workshops/{workshop_id}/reservations",
         headers={"Authorization": f"Bearer {emp_token}"},
         json=reservation_payload,
     )
@@ -118,7 +118,7 @@ def test_workshop_crud_and_reservations(client: TestClient, session: Session, te
 
     # 6️⃣ Get reservations for workshop
     r = client.get(
-        f"/workshops/{workshop_id}/reservations",
+        f"/api/v1/workshops/{workshop_id}/reservations",
         headers={"Authorization": f"Bearer {admin_token}"},
     )
     assert r.status_code == 200
@@ -127,7 +127,7 @@ def test_workshop_crud_and_reservations(client: TestClient, session: Session, te
 
     # 7️⃣ Logical delete workshop
     r = client.delete(
-        f"/workshops/{workshop_id}",
+        f"/api/v1/workshops/{workshop_id}",
         headers={"Authorization": f"Bearer {admin_token}"},
     )
     assert r.status_code == 200
