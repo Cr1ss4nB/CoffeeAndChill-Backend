@@ -3,6 +3,7 @@ from typing import List, Optional
 
 
 
+from sqlalchemy.orm import Mapped
 from sqlmodel import Field, Relationship, SQLModel
 
 
@@ -14,7 +15,7 @@ class TableZone(SQLModel, table=True):
     is_active: bool = Field(default=True)
     description: Optional[str] = Field(default=None)
 
-    spots: List["TableSpot"] = Relationship(back_populates="zone")
+    spots: Mapped[List["TableSpot"]] = Relationship(back_populates="zone")
 
 
 class TableSpot(SQLModel, table=True):
@@ -28,4 +29,4 @@ class TableSpot(SQLModel, table=True):
     label: Optional[str] = Field(default=None, max_length=50)
     is_active: bool = Field(default=True)
 
-    zone: Optional[TableZone] = Relationship(back_populates="spots")
+    zone: Mapped[Optional[TableZone]] = Relationship(back_populates="spots")

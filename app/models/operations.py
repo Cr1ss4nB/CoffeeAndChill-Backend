@@ -2,6 +2,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import List, Optional
 
+from sqlalchemy.orm import Mapped
 from sqlmodel import Field, Relationship, SQLModel
 
 from app.core.time import utc_now
@@ -24,7 +25,7 @@ class Order(SQLModel, table=True):
     order_date: datetime = Field(default_factory=utc_now)
     notes: Optional[str] = Field(default=None)
 
-    items: List["OrderItem"] = Relationship(back_populates="order")
+    items: Mapped[List["OrderItem"]] = Relationship(back_populates="order")
 
 
 class OrderItem(SQLModel, table=True):
@@ -44,7 +45,7 @@ class OrderItem(SQLModel, table=True):
     status: str = Field(default="PENDING")
     special_instructions: Optional[str] = Field(default=None)
 
-    order: Order = Relationship(back_populates="items")
+    order: Mapped[Order] = Relationship(back_populates="items")
 
 
 class Payment(SQLModel, table=True):

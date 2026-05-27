@@ -3,6 +3,7 @@ from datetime import date, datetime
 from typing import Any, Dict, List, Optional
 
 from sqlalchemy import JSON
+from sqlalchemy.orm import Mapped
 from sqlmodel import Column, Field, Relationship, SQLModel
 
 from app.core.time import utc_now
@@ -19,7 +20,7 @@ class Customer(SQLModel, table=True):
     is_registered: bool = Field(default=False)
     created_at: datetime = Field(default_factory=utc_now)
 
-    reservations: List["WorkshopReservation"] = Relationship(back_populates="customer")
+    reservations: Mapped[List["WorkshopReservation"]] = Relationship(back_populates="customer")
 
 
 class WorkshopReservation(SQLModel, table=True):
@@ -33,7 +34,7 @@ class WorkshopReservation(SQLModel, table=True):
     reservation_date: datetime = Field(default_factory=utc_now)
     special_requests: Optional[str] = Field(default=None)
 
-    customer: Customer = Relationship(back_populates="reservations")
+    customer: Mapped[Customer] = Relationship(back_populates="reservations")
 
 
 class Notification(SQLModel, table=True):
