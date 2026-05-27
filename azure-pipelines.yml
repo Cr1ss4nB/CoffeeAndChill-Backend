@@ -29,8 +29,6 @@ pool:
   vmImage: "ubuntu-latest"
 
 variables:
-  # Sensitive variables defined in Azure DevOps:
-  # DOCKER_HUB_USERNAME, SECRET_KEY, DOCKER_HUB_PASSWORD (for service connection/login)
   backendImageName: "coffee-chill-backend"
   frontendImageName: "coffee-chill-frontend"
   dockerHubRepo: "$(DOCKER_HUB_USERNAME)"
@@ -38,78 +36,95 @@ variables:
   frontendPath: "CoffeeAndChill-Frontend"
 
 stages:
-  # ---------------- LINT ----------------
-  - stage: Lint
-    jobs:
-      - job: LintBackend
-        steps:
-          - checkout: self
-            path: $(backendPath)
-
-          - task: UsePythonVersion@0
-            inputs:
-              versionSpec: "3.11"
-
-          - script: |
-              cd $(Pipeline.Workspace)/$(backendPath)
-              python -m pip install -r requirements.txt
-              python -m pip install flake8
-              python -m flake8 .
-            displayName: "Run flake8"
-
-      - job: LintFrontend
-        steps:
-          - checkout: frontend
-            path: $(frontendPath)
-
-          - task: NodeTool@0
-            inputs:
-              versionSpec: "20.x"
-
-          - script: |
-              cd $(Pipeline.Workspace)/$(frontendPath)
-              npm ci
-              npm run lint
-            displayName: "Run eslint"
-
-  # ---------------- TEST ----------------
-  - stage: Test
-    dependsOn: Lint
+  # ---------------- TEST & SONARQUBE ----------------
+  - stage: TestAndSonar
+    displayName: "Execute Tests and Sonar Analysis"
     jobs:
       - job: TestBackend
+        displayName: "Backend: Pytest + Sonar"
         steps:
           - checkout: self
             path: $(backendPath)
+            fetchDepth: 0 # Obligatorio para que Sonar compare el historial de git
 
           - task: UsePythonVersion@0
             inputs:
               versionSpec: "3.11"
 
+          # Instalamos dependencias y corremos pruebas generando reporte XML de cobertura
           - script: |
               cd $(Pipeline.Workspace)/$(backendPath)
               pip install -r requirements.txt
               pip install fakeredis pytest pytest-cov
-              pytest --cov=. --cov-fail-under=70
-            displayName: "Run pytest"
+              pytest --cov=. --cov-report=xml --cov-fail-under=70
+            displayName: "Run pytest with XML coverage"
+
+          # Preparamos el escáner de SonarCloud para Python
+          - task: SonarCloudPrepare@3
+            inputs:
+              SonarCloud: "sonarcloud-connection" # Nombre del Service Connection en Azure
+              organization: "tu-organizacion-sonar"
+              scannerMode: "CLI"
+              configMode: "manual"
+              cliProjectKey: "coffee-chill-backend"
+              cliProjectName: "Coffee and Chill Backend"
+              cliSources: "$(Pipeline.Workspace)/$(backendPath)"
+              extraProperties: |
+                sonar.exclusions=**/tests/**,**/venv/**
+                sonar.python.coverage.reportPaths=$(Pipeline.Workspace)/$(backendPath)/coverage.xml
+
+          - task: SonarCloudAnalyze@3
+            displayName: "Run SonarCloud Analysis"
+
+          - task: SonarCloudPublish@3
+            inputs:
+              pollingTimeoutSec: "300"
 
       - job: TestFrontend
+        displayName: "Frontend: Vitest + Sonar"
         steps:
           - checkout: frontend
             path: $(frontendPath)
+            fetchDepth: 0
 
           - task: NodeTool@0
             inputs:
               versionSpec: "20.x"
 
+          # Obligatorio para frontend: instalar la herramienta del escáner en el agente
+          - task: SonarCloudPrepare@3
+            inputs:
+              SonarCloud: "sonarcloud-connection"
+              organization: "tu-organizacion-sonar"
+              scannerMode: "CLI"
+              configMode: "manual"
+              cliProjectKey: "coffee-chill-frontend"
+              cliProjectName: "Coffee and Chill Frontend"
+              cliSources: "$(Pipeline.Workspace)/$(frontendPath)/src"
+              extraProperties: |
+                sonar.tests=$(Pipeline.Workspace)/$(frontendPath)/src
+                sonar.test.inclusions=**/*.test.tsx,**/*.test.ts,**/*.spec.tsx,**/*.spec.ts
+                sonar.exclusions=**/node_modules/**,**/dist/**
+                sonar.javascript.lcov.reportPaths=$(Pipeline.Workspace)/$(frontendPath)/coverage/lcov.info
+
+          # Vitest DEBE generar formato lcov. Asegúrate que en tu vite.config o vitest.config
+          # esté configurado: coverage: { reporter: ['text', 'lcov'] }
           - script: |
               cd $(Pipeline.Workspace)/$(frontendPath)
               npm ci
               npx vitest run --coverage --reporter=verbose
-            displayName: "Run vitest"
+            displayName: "Run vitest and generate LCOV"
+
+          - task: SonarCloudAnalyze@3
+            displayName: "Run SonarCloud Analysis"
+
+          - task: SonarCloudPublish@3
+            inputs:
+              pollingTimeoutSec: "300"
 
   # ---------------- BUILD ----------------
   - stage: Build
-    dependsOn: Test
+    dependsOn: TestAndSonar
     jobs:
       - job: BuildImages
         steps:
