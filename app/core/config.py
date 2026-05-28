@@ -1,4 +1,5 @@
 import os
+import secrets
 from urllib.parse import quote_plus
 
 from dotenv import load_dotenv
@@ -36,7 +37,7 @@ _DEFAULT_MEDIA_DIR = os.path.join(_BACKEND_ROOT, "media")
 class Settings:
     DATABASE_URL: str = _build_database_url()
     REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-    SECRET_KEY: str = os.getenv("SECRET_KEY", "development-secret-key")
+    SECRET_KEY: str = os.getenv("SECRET_KEY") or secrets.token_urlsafe(64)
     ALGORITHM: str = os.getenv("ALGORITHM", "HS256")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "15"))
     REFRESH_TOKEN_EXPIRE_DAYS: int = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", "7"))
@@ -56,8 +57,8 @@ class Settings:
     FRONTEND_ORIGINS: list[str] = os.getenv(
         "FRONTEND_ORIGINS",
         (
-            "http://localhost,http://localhost:80,http://localhost:5173,"
-            "http://127.0.0.1,http://127.0.0.1:5173"
+            "https://localhost,https://localhost:80,https://localhost:5173,"
+            "https://127.0.0.1,https://127.0.0.1:5173"
         ),
     ).split(",")
     MEDIA_DIR: str = os.getenv("MEDIA_DIR", _DEFAULT_MEDIA_DIR)
