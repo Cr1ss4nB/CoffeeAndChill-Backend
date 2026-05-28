@@ -3,7 +3,6 @@ import pytest
 
 from app.core.fulfillment import FulfillmentType, resolve_effective_fulfillment
 
-
 # ---------------------------------------------------------------------------
 # resolve_effective_fulfillment — full 3×2 matrix
 # ---------------------------------------------------------------------------

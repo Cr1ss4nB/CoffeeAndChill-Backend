@@ -10,19 +10,15 @@ from app.models.catalog import Product
 from app.models.inventory import Ingredient, IngredientStockMovement, ProductConsumption
 from app.schemas.auth import UserResponse
 from app.schemas.inventory import (
+    ConsumptionItemResponse,
+    ConsumptionUpsertRequest,
     IngredientAdjustmentRequest,
     IngredientCreate,
     IngredientResponse,
     IngredientUpdate,
-    ConsumptionItemResponse,
-    ConsumptionUpsertRequest,
-)
-from app.services.inventory_service import (
-    get_current_stock,
-    record_movement,
-    get_low_stock_items,
 )
 from app.services.availability import get_ingredient_current_stock
+from app.services.inventory_service import get_current_stock, get_low_stock_items, record_movement
 
 router = APIRouter(tags=["Ingredients"])
 

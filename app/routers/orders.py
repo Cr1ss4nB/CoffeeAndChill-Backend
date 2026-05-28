@@ -1,21 +1,21 @@
 from typing import Dict, List, Optional
 
+import redis as sync_redis
 import redis.asyncio as aioredis
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlmodel import Session, select
 from sqlalchemy.orm import selectinload
+from sqlmodel import Session, select
 from sse_starlette.sse import EventSourceResponse
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_user, require_role
 from app.core.redis import get_async_redis, get_redis_client
+from app.models.catalog import Product
+from app.models.infrastructure import TableSpot
+from app.models.operations import Order
 from app.schemas.auth import UserResponse
 from app.schemas.order import CheckoutRequest, OrderItemResponse, OrderResponse
 from app.services.order_service import process_checkout
-from app.models.catalog import Product
-from app.models.operations import Order
-from app.models.infrastructure import TableSpot
-import redis as sync_redis
 
 router = APIRouter(tags=["orders"])
 

@@ -12,8 +12,8 @@ from app.core.dependencies import require_permission, require_role
 from app.core.fulfillment import FulfillmentType
 from app.models.catalog import Category, Product
 from app.routers.catalog_utils import product_to_catalog_response
-from app.schemas.catalog import ProductCreate, ProductResponse, ProductStatusUpdate, ProductUpdate
 from app.schemas.auth import UserResponse
+from app.schemas.catalog import ProductCreate, ProductResponse, ProductStatusUpdate, ProductUpdate
 
 IMAGES_DIR = os.path.join(settings.MEDIA_DIR, "images")
 _ALLOWED_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}

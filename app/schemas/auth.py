@@ -1,4 +1,5 @@
 from typing import Optional
+
 from pydantic import BaseModel, EmailStr, field_validator
 
 # ── Register (only for clients self-registering) ──────────────────────────────

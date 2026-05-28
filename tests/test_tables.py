@@ -1,14 +1,13 @@
 import pytest
 from fastapi.testclient import TestClient
-from sqlmodel import Session
+from sqlmodel import Session, select
 
+from app.core.security import hash_password
 from app.models.catalog import Category, Product
 from app.models.infrastructure import TableSpot
 from app.models.operations import Order, OrderItem
 from app.models.security import Role, SystemUser
-from app.core.security import hash_password
 
-from sqlmodel import select
 
 def _admin_token(client: TestClient) -> str:
     r = client.post("/auth/login", json={"email": "admin@example.com", "password": "adminpass"})
@@ -22,7 +21,7 @@ def _employee_token(client: TestClient, session: Session) -> str:
         session.add(role_emp)
         session.commit()
         session.refresh(role_emp)
-    
+
     # Create employee user if not exists
     emp = session.exec(select(SystemUser).where(SystemUser.email == "employee@example.com")).first()
     if not emp:
@@ -48,7 +47,7 @@ def test_get_tables_empty(client: TestClient, test_data):
 
 def test_create_table_success(client: TestClient, session: Session, test_data):
     token = _admin_token(client)
-    
+
     payload = {"table_number": 5, "capacity": 4, "label": "Mesa Principal"}
     response = client.post("/api/v1/admin/tables", headers={"Authorization": f"Bearer {token}"}, json=payload)
     assert response.status_code == 201

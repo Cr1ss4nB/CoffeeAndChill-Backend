@@ -1,9 +1,9 @@
 from __future__ import annotations
+
 from datetime import datetime
 from typing import List, Optional
 
-from sqlalchemy.orm import Mapped
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, relationship
 from sqlmodel import Field, Relationship, SQLModel
 
 from app.core.time import utc_now

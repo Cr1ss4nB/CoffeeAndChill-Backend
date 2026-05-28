@@ -5,14 +5,14 @@ This service handles workshop creation, updates, reservations,
 and availability tracking.
 """
 
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
 
 from fastapi import HTTPException, status
 from sqlmodel import Session, select
 
-from app.models.catalog import Workshop, WorkshopSchedule
-from app.models.crm import WorkshopReservation, Customer
 from app.core.time import utc_now
+from app.models.catalog import Workshop, WorkshopSchedule
+from app.models.crm import Customer, WorkshopReservation
 
 
 def create_workshop(
@@ -21,15 +21,15 @@ def create_workshop(
 ) -> Workshop:
     """
     Create a new workshop.
-    
+
     Args:
         session: Database session
         data: Dictionary with workshop information
               (name, category_id, description, duration_minutes, max_capacity, price, instructor_name)
-    
+
     Returns:
         Created Workshop instance
-    
+
     Raises:
         HTTPException: If validation fails or category not found
     """
@@ -41,26 +41,26 @@ def create_workshop(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"{field} is required"
             )
-    
+
     # Validate numeric fields
     if data["duration_minutes"] <= 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="duration_minutes must be greater than zero"
         )
-    
+
     if data["max_capacity"] <= 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="max_capacity must be greater than zero"
         )
-    
+
     if data["price"] < 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="price cannot be negative"
         )
-    
+
     # Create workshop
     workshop = Workshop(
         name=data["name"],
@@ -72,11 +72,11 @@ def create_workshop(
         instructor_name=data.get("instructor_name"),
         is_active=True
     )
-    
+
     session.add(workshop)
     session.commit()
     session.refresh(workshop)
-    
+
     return workshop
 
 
@@ -87,71 +87,71 @@ def update_workshop(
 ) -> Workshop:
     """
     Update an existing workshop.
-    
+
     Args:
         session: Database session
         workshop_id: ID of workshop to update
         data: Dictionary with fields to update
-    
+
     Returns:
         Updated Workshop instance
-    
+
     Raises:
         HTTPException: If workshop not found or validation fails
     """
     workshop = session.get(Workshop, workshop_id)
-    
+
     if not workshop:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Workshop not found"
         )
-    
+
     # Validate numeric fields if provided
     if "duration_minutes" in data and data["duration_minutes"] <= 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="duration_minutes must be greater than zero"
         )
-    
+
     if "max_capacity" in data and data["max_capacity"] <= 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="max_capacity must be greater than zero"
         )
-    
+
     if "price" in data and data["price"] < 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="price cannot be negative"
         )
-    
+
     # Update fields
     if "name" in data:
         workshop.name = data["name"]
-    
+
     if "description" in data:
         workshop.description = data["description"]
-    
+
     if "duration_minutes" in data:
         workshop.duration_minutes = data["duration_minutes"]
-    
+
     if "max_capacity" in data:
         workshop.max_capacity = data["max_capacity"]
-    
+
     if "price" in data:
         workshop.price = round(data["price"], 2)
-    
+
     if "instructor_name" in data:
         workshop.instructor_name = data["instructor_name"]
-    
+
     if "is_active" in data:
         workshop.is_active = data["is_active"]
-    
+
     session.add(workshop)
     session.commit()
     session.refresh(workshop)
-    
+
     return workshop
 
 
@@ -166,7 +166,7 @@ def create_reservation(
 ) -> WorkshopReservation:
     """
     Create a workshop reservation.
-    
+
     Args:
         session: Database session
         workshop_id: ID of workshop
@@ -175,10 +175,10 @@ def create_reservation(
         schedule_id: ID of workshop schedule/slot
         quantity_slots: Number of slots to reserve
         special_requests: Optional special requests
-    
+
     Returns:
         Created WorkshopReservation instance
-    
+
     Raises:
         HTTPException: If validation fails or resources not found
     """
@@ -189,7 +189,7 @@ def create_reservation(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Workshop not found"
         )
-    
+
     # Validate customer exists
     customer = session.get(Customer, customer_id)
     if not customer:
@@ -197,7 +197,7 @@ def create_reservation(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Customer not found"
         )
-    
+
     # Validate schedule exists
     schedule = session.get(WorkshopSchedule, schedule_id)
     if not schedule:
@@ -205,24 +205,24 @@ def create_reservation(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Workshop schedule not found"
         )
-    
+
     # Validate quantity
     if quantity_slots <= 0 or quantity_slots > workshop.max_capacity:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Quantity must be between 1 and {workshop.max_capacity}"
         )
-    
+
     # Check available slots
     if schedule.available_slots < quantity_slots:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Not enough slots available. Only {schedule.available_slots} available"
         )
-    
+
     # Calculate total price
     total_price = workshop.price * quantity_slots
-    
+
     # Create reservation
     reservation = WorkshopReservation(
         customer_id=customer_id,
@@ -234,15 +234,15 @@ def create_reservation(
         special_requests=special_requests,
         reservation_date=utc_now()
     )
-    
+
     # Update available slots in schedule
     schedule.available_slots -= quantity_slots
-    
+
     session.add(reservation)
     session.add(schedule)
     session.commit()
     session.refresh(reservation)
-    
+
     return reservation
 
 
@@ -253,60 +253,60 @@ def cancel_reservation(
 ) -> WorkshopReservation:
     """
     Cancel a workshop reservation.
-    
+
     Args:
         session: Database session
         reservation_id: ID of reservation to cancel
         reason: Optional reason for cancellation
-    
+
     Returns:
         Updated WorkshopReservation instance
-    
+
     Raises:
         HTTPException: If reservation not found or cannot be cancelled
     """
     reservation = session.get(WorkshopReservation, reservation_id)
-    
+
     if not reservation:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Reservation not found"
         )
-    
+
     if reservation.status in ["CANCELLED", "COMPLETED"]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Cannot cancel reservation with status: {reservation.status}"
         )
-    
+
     # Return slots to schedule
     schedule = session.get(WorkshopSchedule, reservation.schedule_id)
     if schedule:
         schedule.available_slots += reservation.quantity_slots
         session.add(schedule)
-    
+
     reservation.status = "CANCELLED"
     session.add(reservation)
     session.commit()
     session.refresh(reservation)
-    
+
     return reservation
 
 
 def get_available_workshops(session: Session) -> List[Dict[str, Any]]:
     """
     Get all active workshops with availability information.
-    
+
     Args:
         session: Database session
-    
+
     Returns:
         List of workshop dictionaries with schedule info
     """
     workshops = session.exec(
         select(Workshop).where(Workshop.is_active == True)  # noqa: E712
     ).all()
-    
+
     result = []
     for workshop in workshops:
         # Get schedules with available slots
@@ -316,10 +316,10 @@ def get_available_workshops(session: Session) -> List[Dict[str, Any]]:
                 WorkshopSchedule.status == "OPEN"
             )
         ).all()
-        
+
         # Check if any schedule has available slots
         has_availability = any(s.available_slots > 0 for s in schedules)
-        
+
         if has_availability:
             result.append({
                 "workshop_id": workshop.workshop_id,
@@ -341,7 +341,7 @@ def get_available_workshops(session: Session) -> List[Dict[str, Any]]:
                     for s in schedules if s.available_slots > 0
                 ]
             })
-    
+
     return result
 
 
@@ -351,32 +351,32 @@ def get_workshop_details(
 ) -> Dict[str, Any]:
     """
     Get detailed information about a workshop including schedules and reservations.
-    
+
     Args:
         session: Database session
         workshop_id: ID of workshop
-    
+
     Returns:
         Dictionary with detailed workshop information
-    
+
     Raises:
         HTTPException: If workshop not found
     """
     workshop = session.get(Workshop, workshop_id)
-    
+
     if not workshop:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Workshop not found"
         )
-    
+
     # Get schedules
     schedules = session.exec(
         select(WorkshopSchedule).where(
             WorkshopSchedule.workshop_id == workshop_id
         )
     ).all()
-    
+
     # Get reservation count
     reservations = session.exec(
         select(WorkshopReservation).where(
@@ -384,7 +384,7 @@ def get_workshop_details(
             WorkshopReservation.status != "CANCELLED"
         )
     ).all()
-    
+
     return {
         "workshop_id": workshop.workshop_id,
         "name": workshop.name,

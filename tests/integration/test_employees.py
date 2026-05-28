@@ -6,7 +6,6 @@ from sqlmodel import Session, select
 from app.core.security import hash_password
 from app.models.security import Role, SystemUser
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

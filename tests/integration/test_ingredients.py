@@ -3,10 +3,9 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session, select
 
-from app.models.inventory import Ingredient, IngredientStockMovement
 from app.models.catalog import Category, Product
+from app.models.inventory import Ingredient, IngredientStockMovement
 from app.models.security import SystemUser
-
 
 # ---------------------------------------------------------------------------
 # Helpers / fixtures

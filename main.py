@@ -1,18 +1,54 @@
+import logging
 import os
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.core.config import settings
-from app.routers import auth, catalog, employees, ingredients, inventory, products, tables, orders, workshops, public, payments
+from app.core.database import create_db_and_tables
+from app.routers import (
+    auth,
+    catalog,
+    employees,
+    ingredients,
+    inventory,
+    orders,
+    payments,
+    products,
+    public,
+    tables,
+    workshops,
+)
+
+logger = logging.getLogger(__name__)
 
 MEDIA_DIR = settings.MEDIA_DIR
 os.makedirs(os.path.join(MEDIA_DIR, "images"), exist_ok=True)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    create_db_and_tables()
+
+    if settings.AUTO_SEED_DEMO_DATA:
+        try:
+            from seeders import run_all
+
+            run_all()
+            logger.info("Demo data seeded successfully")
+        except Exception:
+            logger.exception("Demo data seeding failed during startup")
+
+    yield
+
 
 app = FastAPI(
     title="Coffee & Chill API",
     version="0.1.0",
     description="API para el sistema POS + Reservas de Coffee & Chill",
+    lifespan=lifespan,
 )
 
 app.add_middleware(

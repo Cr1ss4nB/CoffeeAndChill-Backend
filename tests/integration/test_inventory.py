@@ -7,7 +7,6 @@ from app.models.catalog import Category, Product
 from app.models.inventory import InventoryMovement
 from app.models.security import SystemUser
 
-
 # ---------------------------------------------------------------------------
 # Helpers / fixtures
 # ---------------------------------------------------------------------------

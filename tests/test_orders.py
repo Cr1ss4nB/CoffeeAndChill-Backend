@@ -1,6 +1,7 @@
 from fastapi.testclient import TestClient
 from sqlmodel import Session
-from app.models.catalog import Product, Category
+
+from app.models.catalog import Category, Product
 from app.models.infrastructure import TableSpot
 from tests.conftest import get_admin_headers, get_customer_headers
 

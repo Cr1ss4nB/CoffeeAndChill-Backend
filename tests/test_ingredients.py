@@ -1,8 +1,9 @@
 from fastapi.testclient import TestClient
 from sqlmodel import Session, select
-from tests.conftest import get_admin_headers
-from app.models.inventory import Ingredient, IngredientStockMovement, ProductConsumption
+
 from app.models.catalog import Category, Product
+from app.models.inventory import Ingredient, IngredientStockMovement, ProductConsumption
+from tests.conftest import get_admin_headers
 
 
 def test_list_ingredients_empty(client: TestClient, test_data):

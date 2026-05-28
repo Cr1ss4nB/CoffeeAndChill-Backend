@@ -3,14 +3,12 @@ from datetime import datetime, timezone
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from app.models.catalog import Category, Product
 from app.models.infrastructure import TableSpot
 from app.models.operations import Order, Payment
 from app.models.security import SystemUser
-from sqlmodel import select
-
 
 # ---------------------------------------------------------------------------
 # Helpers / fixtures
