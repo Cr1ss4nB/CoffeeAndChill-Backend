@@ -12,6 +12,7 @@ from sqlmodel import Session, select
 
 from app.core.database import get_db
 from app.core.dependencies import require_permission, require_role
+from app.core.config import settings
 from app.core.redis import get_redis_client
 from app.models.catalog import Product
 from app.models.infrastructure import TableSpot
@@ -24,6 +25,7 @@ from app.schemas.tables import TableCreate, TableResponse, TableUpdate
 class TableCloseRequest(BaseModel):
     payment_method: str  # CASH|CARD|TRANSFER|WALLET
     tip_amount: float = 0.0
+
 
 router = APIRouter(tags=["Tables"])
 
@@ -141,7 +143,9 @@ def close_table(
     table_id: int,
     payload: TableCloseRequest,
     session: Session = Depends(get_db),
-    current_user: UserResponse = Depends(require_role(["admin", "employee", "cashier"])),
+    current_user: UserResponse = Depends(
+        require_role(["admin", "employee", "cashier"])
+    ),
     redis_client: sync_redis.Redis = Depends(get_redis_client),
 ):
     """
@@ -150,9 +154,13 @@ def close_table(
     """
     table = session.get(TableSpot, table_id)
     if not table:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mesa no encontrada")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Mesa no encontrada"
+        )
     if table.status != "OCCUPIED":
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="La mesa no está ocupada")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="La mesa no está ocupada"
+        )
 
     active_orders = session.exec(
         select(Order)
@@ -187,10 +195,14 @@ def close_table(
         session.refresh(payment)
 
     # Batch-load products for SSE publish
-    product_ids = {item.product_id for o in active_orders for item in o.items if item.product_id}
+    product_ids = {
+        item.product_id for o in active_orders for item in o.items if item.product_id
+    }
     product_map: dict = {}
     if product_ids:
-        prods = session.exec(select(Product).where(Product.product_id.in_(product_ids))).all()
+        prods = session.exec(
+            select(Product).where(Product.product_id.in_(product_ids))
+        ).all()
         product_map = {p.product_id: p.name for p in prods}
 
     for order in active_orders:
@@ -199,7 +211,9 @@ def close_table(
             OrderItemResponse(
                 item_id=item.item_id,
                 product_id=item.product_id,
-                product_name=product_map.get(item.product_id) if item.product_id else None,
+                product_name=(
+                    product_map.get(item.product_id) if item.product_id else None
+                ),
                 quantity=item.quantity,
                 unit_price=item.unit_price,
                 subtotal=item.subtotal,
@@ -254,7 +268,7 @@ def generate_table_qr(
     frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/")
     qr_url = f"{frontend_url}/menu/{table.table_code}"
 
-    qr_dir = "/app/media/qr"
+    qr_dir = os.path.join(settings.MEDIA_DIR, "qr")
     os.makedirs(qr_dir, exist_ok=True)
     qr_path = os.path.join(qr_dir, f"{table.table_code}.png")
 
