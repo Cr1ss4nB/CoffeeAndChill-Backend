@@ -197,7 +197,7 @@ def test_adjustment_positive_in(
         },
     )
     assert r.status_code == 200
-    assert r.json()["new_stock"] == 100.0
+    assert r.json()["new_stock"] == pytest.approx(100.0)
 
 
 def test_adjustment_negative_out(
@@ -213,7 +213,7 @@ def test_adjustment_negative_out(
         },
     )
     assert r.status_code == 200
-    assert r.json()["new_stock"] == 400.0
+    assert r.json()["new_stock"] == pytest.approx(400.0)
 
 
 def test_adjustment_insufficient_stock_returns_400(

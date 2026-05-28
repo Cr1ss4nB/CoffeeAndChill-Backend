@@ -1,4 +1,5 @@
 import os
+import secrets
 
 os.environ["MEDIA_DIR"] = os.path.join(os.path.dirname(__file__), "media")
 
@@ -15,10 +16,15 @@ from app.models.crm import Customer  # noqa: E402
 from app.models.security import Role, SystemUser  # noqa: E402
 from main import app  # noqa: E402
 
-DEMO_ADMIN_EMAIL = "admin@example.com"
-DEMO_ADMIN_PASSWORD = "adminpass"
-DEMO_CUSTOMER_EMAIL = "customer@example.com"
-DEMO_CUSTOMER_PASSWORD = "customerpass"
+DEMO_ADMIN_EMAIL = os.environ.get("DEMO_ADMIN_EMAIL", "admin@example.com")
+# DEMO_ADMIN_PASSWORD is read from the environment when available; otherwise a
+# random password is generated at test runtime to avoid storing secrets in
+# source. Tests seed users using this value so it remains consistent during a
+# test run.
+DEMO_ADMIN_PASSWORD = os.environ.get("DEMO_ADMIN_PASSWORD") or secrets.token_urlsafe(12)
+DEMO_CUSTOMER_EMAIL = os.environ.get("DEMO_CUSTOMER_EMAIL", "customer@example.com")
+# Customer password for tests is generated similarly to avoid a hardcoded literal.
+DEMO_CUSTOMER_PASSWORD = os.environ.get("DEMO_CUSTOMER_PASSWORD") or secrets.token_urlsafe(12)
 
 # Setup in-memory sqlite for testing
 engine = create_engine(
