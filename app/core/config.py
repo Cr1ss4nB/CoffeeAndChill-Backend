@@ -41,6 +41,12 @@ class Settings:
     ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "15"))
     REFRESH_TOKEN_EXPIRE_DAYS: int = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", "7"))
     LOW_STOCK_THRESHOLD: int = int(os.getenv("LOW_STOCK_THRESHOLD", "10"))
+    AUTO_CREATE_TABLES: bool = os.getenv("AUTO_CREATE_TABLES", "false").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
     AUTO_SEED_DEMO_DATA: bool = os.getenv("AUTO_SEED_DEMO_DATA", "false").strip().lower() in {
         "1",
         "true",

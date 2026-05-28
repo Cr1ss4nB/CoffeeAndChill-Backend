@@ -30,7 +30,8 @@ os.makedirs(os.path.join(MEDIA_DIR, "images"), exist_ok=True)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    create_db_and_tables()
+    if settings.AUTO_CREATE_TABLES:
+        create_db_and_tables()
 
     if settings.AUTO_SEED_DEMO_DATA:
         try:
