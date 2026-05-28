@@ -1,0 +1,6 @@
+projectKey=COFFEE-AND-CHILL-back
+serverUrl=http://localhost:9000
+serverVersion=26.5.0.122743
+dashboardUrl=http://localhost:9000/dashboard?id=COFFEE-AND-CHILL-back
+ceTaskId=ff14c88f-ad5d-4b69-8d65-2c1af9c2aaa3
+ceTaskUrl=http://localhost:9000/api/ce/task?id=ff14c88f-ad5d-4b69-8d65-2c1af9c2aaa3

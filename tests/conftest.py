@@ -1,19 +1,30 @@
 import os
+import secrets
 
 os.environ["MEDIA_DIR"] = os.path.join(os.path.dirname(__file__), "media")
 
-import fakeredis
-import pytest
-from fastapi.testclient import TestClient
-from sqlmodel import Session, SQLModel, create_engine
-from sqlmodel.pool import StaticPool
+import fakeredis  # noqa: E402
+import pytest  # noqa: E402
+from fastapi.testclient import TestClient  # noqa: E402
+from sqlmodel import Session, SQLModel, create_engine  # noqa: E402
+from sqlmodel.pool import StaticPool  # noqa: E402
 
-from app.core.database import get_db
-from app.core.redis import get_async_redis, get_redis_client
-from app.core.security import hash_password
-from app.models.crm import Customer
-from app.models.security import Role, SystemUser
-from main import app
+from app.core.database import get_db  # noqa: E402
+from app.core.redis import get_async_redis, get_redis_client  # noqa: E402
+from app.core.security import hash_password  # noqa: E402
+from app.models.crm import Customer  # noqa: E402
+from app.models.security import Role, SystemUser  # noqa: E402
+from main import app  # noqa: E402
+
+DEMO_ADMIN_EMAIL = os.environ.get("DEMO_ADMIN_EMAIL", "admin@example.com")
+# DEMO_ADMIN_PASSWORD is read from the environment when available; otherwise a
+# random password is generated at test runtime to avoid storing secrets in
+# source. Tests seed users using this value so it remains consistent during a
+# test run.
+DEMO_ADMIN_PASSWORD = os.environ.get("DEMO_ADMIN_PASSWORD") or secrets.token_urlsafe(12)
+DEMO_CUSTOMER_EMAIL = os.environ.get("DEMO_CUSTOMER_EMAIL", "customer@example.com")
+# Customer password for tests is generated similarly to avoid a hardcoded literal.
+DEMO_CUSTOMER_PASSWORD = os.environ.get("DEMO_CUSTOMER_PASSWORD") or secrets.token_urlsafe(12)
 
 # Setup in-memory sqlite for testing
 engine = create_engine(
@@ -53,6 +64,7 @@ async def _fake_async_redis_override():
 def reset_sse_app_status():
     try:
         from sse_starlette.sse import AppStatus
+
         AppStatus.should_exit = False
         AppStatus.should_exit_event = None
     except ImportError:
@@ -60,6 +72,7 @@ def reset_sse_app_status():
     yield
     try:
         from sse_starlette.sse import AppStatus
+
         AppStatus.should_exit = False
         AppStatus.should_exit_event = None
     except ImportError:
@@ -104,8 +117,8 @@ def test_data_fixture(session: Session):
     # Create admin user
     admin = SystemUser(
         full_name="Admin Test",
-        email="admin@example.com",
-        password_hash=hash_password("adminpass"),
+        email=DEMO_ADMIN_EMAIL,
+        password_hash=hash_password(DEMO_ADMIN_PASSWORD),
         role_id=role_admin.role_id,
         is_active=True,
     )
@@ -114,10 +127,45 @@ def test_data_fixture(session: Session):
     # Create customer
     customer = Customer(
         full_name="Customer Test",
-        email="customer@example.com",
-        password_hash=hash_password("customerpass"),
+        email=DEMO_CUSTOMER_EMAIL,
+        password_hash=hash_password(DEMO_CUSTOMER_PASSWORD),
         is_registered=True,
         loyalty_points=10,
     )
     session.add(customer)
     session.commit()
+
+
+# ── Auth Helpers ──────────────────────────────────────────────────────────────
+
+
+def admin_login(client: TestClient) -> dict:
+    """Login as admin and return token."""
+    response = client.post(
+        "/auth/login",
+        json={"email": DEMO_ADMIN_EMAIL, "password": DEMO_ADMIN_PASSWORD},
+    )
+    assert response.status_code == 200
+    return response.json()
+
+
+def customer_login(client: TestClient) -> dict:
+    """Login as customer and return token."""
+    response = client.post(
+        "/auth/login",
+        json={"email": DEMO_CUSTOMER_EMAIL, "password": DEMO_CUSTOMER_PASSWORD},
+    )
+    assert response.status_code == 200
+    return response.json()
+
+
+def get_admin_headers(client: TestClient) -> dict:
+    """Get authorization headers for admin."""
+    token = admin_login(client)
+    return {"Authorization": f"Bearer {token['access_token']}"}
+
+
+def get_customer_headers(client: TestClient) -> dict:
+    """Get authorization headers for customer."""
+    token = customer_login(client)
+    return {"Authorization": f"Bearer {token['access_token']}"}

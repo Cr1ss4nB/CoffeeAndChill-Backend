@@ -9,7 +9,7 @@ from __future__ import annotations
 import math
 from typing import Optional
 
-from sqlmodel import Session, func, select, case
+from sqlmodel import Session, case, func, select
 
 from app.core.fulfillment import FulfillmentType, resolve_effective_fulfillment
 from app.models.catalog import Product

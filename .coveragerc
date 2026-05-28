@@ -1,0 +1,7 @@
+[run]
+relative_files = True
+source = app
+omit =
+    */tests/*
+    */venv/*
+    */alembic/*

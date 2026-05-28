@@ -1,5 +1,6 @@
-from typing import List, Optional
 from datetime import datetime
+from typing import List, Optional
+
 from pydantic import BaseModel, Field
 
 
@@ -13,7 +14,7 @@ class CheckoutRequest(BaseModel):
     order_type: str = Field(pattern="^(DINE_IN|TAKEAWAY|DELIVERY)$", description="Tipo de orden")
     table_id: Optional[int] = None
     notes: Optional[str] = None
-    items: List[OrderItemCreate] = Field(min_length=1, description="El carrito no puede estar vacío")
+    items: List[OrderItemCreate] = Field(description="Items del carrito")
 
 
 class OrderItemResponse(BaseModel):

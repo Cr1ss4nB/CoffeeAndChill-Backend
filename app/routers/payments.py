@@ -11,7 +11,7 @@ from app.models.operations import Order, Payment
 from app.models.security import SystemUser
 from app.schemas.auth import UserResponse
 
-router = APIRouter(prefix="/payments", tags=["payments"])
+router = APIRouter(tags=["payments"])
 
 
 @router.get("")
@@ -22,7 +22,7 @@ def get_payments(
     session: Session = Depends(get_db),
     current_user: UserResponse = Depends(require_role(["admin", "cashier", "employee"])),
 ):
-    """Historial de pagos del día (o de la fecha indicada)."""
+    """Get payment history for the specified date (or today by default)."""
     if date_filter:
         try:
             filter_date = datetime.strptime(date_filter, "%Y-%m-%d").date()
@@ -31,40 +31,41 @@ def get_payments(
     else:
         filter_date = date.today()
 
-    start = datetime.combine(filter_date, datetime.min.time())
-    end = datetime.combine(filter_date, datetime.max.time())
+    start_dt = datetime.combine(filter_date, datetime.min.time())
+    end_dt = datetime.combine(filter_date, datetime.max.time())
 
     payments = session.exec(
         select(Payment)
-        .where(Payment.payment_date >= start, Payment.payment_date <= end)
+        .where(Payment.payment_date >= start_dt, Payment.payment_date <= end_dt)
         .order_by(Payment.payment_date.desc())
-        .offset(offset)
-        .limit(limit)
     ).all()
 
     result = []
-    for p in payments:
-        order = session.get(Order, p.order_id)
+    for payment in payments[offset:offset + limit]:
+        order = session.get(Order, payment.order_id)
         table = session.get(TableSpot, order.table_id) if order and order.table_id else None
-        user = session.get(SystemUser, p.system_user_id)
         result.append({
-            "payment_id": p.payment_id,
-            "order_id": p.order_id,
+            "payment_id": payment.payment_id,
+            "order_id": payment.order_id,
+            "amount": payment.amount,
+            "tip_amount": payment.tip_amount,
+            "payment_method": payment.payment_method,
+            "status": payment.status,
+            "transaction_reference": payment.transaction_reference,
+            "payment_date": payment.payment_date.isoformat() if payment.payment_date else None,
             "table_number": table.table_number if table else None,
             "table_code": table.table_code if table else None,
-            "payment_method": p.payment_method,
-            "amount": p.amount,
-            "tip_amount": p.tip_amount,
-            "total": round(p.amount + p.tip_amount, 2),
-            "payment_date": p.payment_date.isoformat(),
-            "cashier": user.full_name if user else None,
         })
 
-    summary = {
-        "count": len(result),
-        "total_ventas": round(sum(r["amount"] for r in result), 2),
-        "total_propinas": round(sum(r["tip_amount"] for r in result), 2),
-        "total_con_propinas": round(sum(r["total"] for r in result), 2),
+    total_sales = round(sum(p.amount for p in payments), 2)
+    total_tips = round(sum(p.tip_amount for p in payments), 2)
+    return {
+        "payments": result,
+        "summary": {
+            "count": len(payments),
+            "total_ventas": total_sales,
+            "total_propinas": total_tips,
+            "total_con_propinas": round(total_sales + total_tips, 2),
+        },
+        "date": filter_date.isoformat()
     }
-
-    return {"payments": result, "summary": summary, "date": filter_date.isoformat()}

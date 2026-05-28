@@ -4,20 +4,20 @@ from typing import List, Optional
 import redis.asyncio as aioredis
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
-from sqlmodel import Session, select
 from sqlalchemy.orm import selectinload
+from sqlmodel import Session, select
 from sse_starlette.sse import EventSourceResponse
 
 from app.core.database import get_db
 from app.core.redis import get_async_redis
+from app.models.catalog import Category, Product
 from app.models.infrastructure import TableSpot
-from app.models.catalog import Product, Category
 from app.models.operations import Order
 from app.models.security import SystemUser
 from app.schemas.order import CheckoutRequest, OrderItemCreate, OrderItemResponse, OrderResponse
 from app.services.availability import compute_sellable_snapshot
 
-router = APIRouter(prefix="/public", tags=["public"])
+router = APIRouter(tags=["public"])
 
 
 class TableInfoResponse(BaseModel):

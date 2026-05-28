@@ -1,6 +1,5 @@
-import json
 import os
-from typing import List
+from typing import Annotated, List
 
 import qrcode
 import redis as sync_redis
@@ -10,6 +9,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import selectinload
 from sqlmodel import Session, select
 
+from app.core.config import settings
 from app.core.database import get_db
 from app.core.dependencies import require_permission, require_role
 from app.core.redis import get_redis_client
@@ -25,15 +25,16 @@ class TableCloseRequest(BaseModel):
     payment_method: str  # CASH|CARD|TRANSFER|WALLET
     tip_amount: float = 0.0
 
-router = APIRouter(prefix="/tables", tags=["Tables"])
+
+router = APIRouter(tags=["Tables"])
 
 
 @router.get("", response_model=List[TableResponse])
 def get_tables(
-    session: Session = Depends(get_db),
-    user: UserResponse = Depends(require_permission("tables:manage")),
+    session: Annotated[Session, Depends(get_db)],
+    user: Annotated[UserResponse, Depends(require_permission("tables:manage"))],
 ):
-    tables = session.exec(select(TableSpot).where(TableSpot.is_active == True)).all()
+    tables = session.exec(select(TableSpot).where(TableSpot.is_active)).all()
     print(f"DEBUG: El servidor encontró {len(tables)} mesas activas.")
     return tables
 
@@ -41,8 +42,8 @@ def get_tables(
 @router.post("", response_model=TableResponse, status_code=status.HTTP_201_CREATED)
 def create_table(
     table_data: TableCreate,
-    session: Session = Depends(get_db),
-    user: UserResponse = Depends(require_permission("tables:manage")),
+    session: Annotated[Session, Depends(get_db)],
+    user: Annotated[UserResponse, Depends(require_permission("tables:manage"))],
 ):
     existing = session.exec(
         select(TableSpot).where(TableSpot.table_number == table_data.table_number)
@@ -74,8 +75,8 @@ def create_table(
 def update_table(
     table_id: int,
     table_data: TableUpdate,
-    session: Session = Depends(get_db),
-    user: UserResponse = Depends(require_permission("tables:manage")),
+    session: Annotated[Session, Depends(get_db)],
+    user: Annotated[UserResponse, Depends(require_permission("tables:manage"))],
 ):
     table = session.get(TableSpot, table_id)
     if not table:
@@ -120,8 +121,8 @@ def update_table(
 @router.delete("/{table_id}")
 def delete_table(
     table_id: int,
-    session: Session = Depends(get_db),
-    user: UserResponse = Depends(require_permission("tables:manage")),
+    session: Annotated[Session, Depends(get_db)],
+    user: Annotated[UserResponse, Depends(require_permission("tables:manage"))],
 ):
     table = session.get(TableSpot, table_id)
     if not table:
@@ -140,9 +141,12 @@ def delete_table(
 def close_table(
     table_id: int,
     payload: TableCloseRequest,
-    session: Session = Depends(get_db),
-    current_user: UserResponse = Depends(require_role(["admin", "employee", "cashier"])),
-    redis_client: sync_redis.Redis = Depends(get_redis_client),
+    session: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[
+        UserResponse,
+        Depends(require_role(["admin", "employee", "cashier"])),
+    ],
+    redis_client: Annotated[sync_redis.Redis, Depends(get_redis_client)],
 ):
     """
     Cierra una mesa: marca todas sus órdenes activas como DELIVERED,
@@ -152,7 +156,9 @@ def close_table(
     if not table:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mesa no encontrada")
     if table.status != "OCCUPIED":
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="La mesa no está ocupada")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="La mesa no está ocupada"
+        )
 
     active_orders = session.exec(
         select(Order)
@@ -199,7 +205,7 @@ def close_table(
             OrderItemResponse(
                 item_id=item.item_id,
                 product_id=item.product_id,
-                product_name=product_map.get(item.product_id) if item.product_id else None,
+                product_name=(product_map.get(item.product_id) if item.product_id else None),
                 quantity=item.quantity,
                 unit_price=item.unit_price,
                 subtotal=item.subtotal,
@@ -237,8 +243,8 @@ def close_table(
 @router.get("/{table_id}/qr")
 def generate_table_qr(
     table_id: int,
-    session: Session = Depends(get_db),
-    user: UserResponse = Depends(require_permission("tables:manage")),
+    session: Annotated[Session, Depends(get_db)],
+    user: Annotated[UserResponse, Depends(require_permission("tables:manage"))],
 ):
     """
     Genera y retorna una imagen PNG con el QR de la mesa.
@@ -251,10 +257,10 @@ def generate_table_qr(
             detail="Mesa no encontrada",
         )
 
-    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/")
+    frontend_url = os.getenv("FRONTEND_URL", "https://localhost:5173").rstrip("/")
     qr_url = f"{frontend_url}/menu/{table.table_code}"
 
-    qr_dir = "/app/media/qr"
+    qr_dir = os.path.join(settings.MEDIA_DIR, "qr")
     os.makedirs(qr_dir, exist_ok=True)
     qr_path = os.path.join(qr_dir, f"{table.table_code}.png")
 

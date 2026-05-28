@@ -5,8 +5,8 @@ from fastapi import HTTPException
 from sqlmodel import Session, select
 
 from app.models.catalog import Product
+from app.models.inventory import IngredientStockMovement, InventoryMovement, ProductConsumption
 from app.models.operations import Order, OrderItem
-from app.models.inventory import InventoryMovement, IngredientStockMovement, ProductConsumption
 from app.models.security import SystemUser
 from app.schemas.auth import UserResponse
 from app.schemas.order import CheckoutRequest
@@ -39,7 +39,7 @@ def process_checkout(
         product = session.get(Product, product_id)
         if not product or product.status != "ACTIVE":
             raise HTTPException(
-                status_code=404,
+                status_code=400,
                 detail=f"Producto id {product_id} no existe o no está activo",
             )
         if total_q < 1:

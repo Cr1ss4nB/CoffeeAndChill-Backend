@@ -53,6 +53,14 @@ stages:
 
           - script: |
               cd $(Pipeline.Workspace)/$(backendPath)
+              # Ensure test media dir exists and export to env so tests write to workspace
+              export MEDIA_DIR=$(Pipeline.Workspace)/$(backendPath)/tests/media
+              mkdir -p "$MEDIA_DIR"
+
+              # Set deterministic demo credentials for CI (override in pipeline variables if needed)
+              export DEMO_ADMIN_PASSWORD=${DEMO_ADMIN_PASSWORD:-adminpass}
+              export DEMO_CUSTOMER_PASSWORD=${DEMO_CUSTOMER_PASSWORD:-customerpass}
+
               pip install -r requirements.txt
               pip install fakeredis pytest pytest-cov
               pytest --cov=. --cov-report=xml --cov-fail-under=70

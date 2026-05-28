@@ -1,11 +1,12 @@
 from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy.orm import selectinload
-from sqlmodel import Session, func, select, case
+from sqlmodel import Session, case, func, select
+
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.dependencies import require_permission
-from app.models.catalog import Product
+from app.models.catalog import Category, Product
 from app.models.inventory import InventoryMovement
 from app.models.security import SystemUser
 from app.schemas.auth import UserResponse
@@ -17,7 +18,7 @@ from app.schemas.inventory import (
 )
 from app.services import availability as av
 
-router = APIRouter(prefix="/inventory", tags=["Inventory"])
+router = APIRouter(tags=["Inventory"])
 
 
 @router.get("", response_model=InventoryListResponse)
@@ -37,7 +38,6 @@ def get_inventory(
     product_query = (
         select(Product)
         .where(cond)
-        .options(selectinload(Product.category))
     )
     products = session.exec(product_query.offset(offset).limit(limit)).all()
 
@@ -74,6 +74,7 @@ def get_inventory(
     items = []
     items = []
     for product in products:
+        category = session.get(Category, product.category_id)
         snap = av.compute_sellable_snapshot(session, product)
         sellable = snap["available_to_sell"]
         is_low = sellable < settings.LOW_STOCK_THRESHOLD
@@ -81,7 +82,7 @@ def get_inventory(
             InventoryResponse(
                 product_id=product.product_id,
                 name=product.name,
-                category=product.category.category_name if product.category else "N/A",
+                category=category.category_name if category else "N/A",
                 price=product.price,
                 stock_quantity=sellable,
                 status=product.status,
