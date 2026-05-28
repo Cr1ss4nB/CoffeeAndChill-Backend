@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import List, Optional
 
 from sqlalchemy.orm import Mapped
+from sqlalchemy.orm import relationship
 from sqlmodel import Field, Relationship, SQLModel
 
 from app.core.time import utc_now
@@ -30,10 +31,10 @@ class Ingredient(SQLModel, table=True):
     is_active: bool = Field(default=True)
 
     stock_movements: Mapped[List["IngredientStockMovement"]] = Relationship(
-        back_populates="ingredient"
+        sa_relationship=relationship("IngredientStockMovement", back_populates="ingredient")
     )
     consumptions: Mapped[List["ProductConsumption"]] = Relationship(
-        back_populates="ingredient"
+        sa_relationship=relationship("ProductConsumption", back_populates="ingredient")
     )
 
 
@@ -47,7 +48,9 @@ class IngredientStockMovement(SQLModel, table=True):
     notes: Optional[str] = Field(default=None)
     movement_date: datetime = Field(default_factory=utc_now)
 
-    ingredient: Mapped[Ingredient] = Relationship(back_populates="stock_movements")
+    ingredient: Mapped[Optional["Ingredient"]] = Relationship(
+        sa_relationship=relationship("Ingredient", back_populates="stock_movements")
+    )
 
 
 class ProductConsumption(SQLModel, table=True):
@@ -57,4 +60,6 @@ class ProductConsumption(SQLModel, table=True):
     ingredient_id: int = Field(foreign_key="ingredient.ingredient_id")
     quantity_used: float  # quantity of ingredient consumed per 1 unit of product sold
 
-    ingredient: Mapped[Ingredient] = Relationship(back_populates="consumptions")
+    ingredient: Mapped[Optional["Ingredient"]] = Relationship(
+        sa_relationship=relationship("Ingredient", back_populates="consumptions")
+    )

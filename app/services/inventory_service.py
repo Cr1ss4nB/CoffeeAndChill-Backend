@@ -1,7 +1,7 @@
 """
 Inventory service layer for managing ingredient stock and movements.
 
-This service handles stock tracking, adjustments, consumption validation,
+                            IngredientStockMovement.movement_type.in_(['OUT', 'SALE', 'WASTE', 'ADJUSTMENT']),
 and low stock notifications.
 """
 
@@ -32,24 +32,23 @@ def get_current_stock(
     Returns:
         Current stock quantity as float
     """
-    result = session.exec(
-        select(
-            func.coalesce(
-                func.sum(
-                    case(
-                        (IngredientStockMovement.movement_type == "IN", IngredientStockMovement.quantity),
-                        (
-                            IngredientStockMovement.movement_type.in_(["OUT", "SALE", "WASTE"]),
-                            -IngredientStockMovement.quantity,
-                        ),
-                        else_=0,
-                    )
-                ),
-                0,
-            )
-        ).where(IngredientStockMovement.ingredient_id == ingredient_id)
-    ).one()
-    
+    stmt = select(
+        func.coalesce(
+            func.sum(
+                case(
+                    (IngredientStockMovement.movement_type == "IN", IngredientStockMovement.quantity),
+                    (
+                        IngredientStockMovement.movement_type.in_(["OUT", "SALE", "WASTE", "ADJUSTMENT"]),
+                        -IngredientStockMovement.quantity,
+                    ),
+                    else_=0,
+                )
+            ),
+            0,
+        )
+    ).where(IngredientStockMovement.ingredient_id == ingredient_id)
+
+    result = session.exec(stmt).one()
     return float(result)
 
 
@@ -63,7 +62,27 @@ def record_movement(
     related_order_id: Optional[int] = None
 ) -> IngredientStockMovement:
     """
-    Record a stock movement for an ingredient.
+                    return float(result)
+    
+                    result = session.exec(
+                        select(
+                            func.coalesce(
+                                func.sum(
+                                    case(
+                                        (IngredientStockMovement.movement_type == "IN", IngredientStockMovement.quantity),
+                                        (
+                                            IngredientStockMovement.movement_type.in_(["OUT", "SALE", "WASTE", "ADJUSTMENT"]),
+                                            -IngredientStockMovement.quantity,
+                                        ),
+                                        else_=0,
+                                    )
+                                ),
+                                0,
+                            )
+                        ).where(IngredientStockMovement.ingredient_id == ingredient_id)
+                    ).scalar_one()
+
+                    return float(result)
     
     Args:
         session: Database session

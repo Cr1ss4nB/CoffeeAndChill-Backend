@@ -18,7 +18,7 @@ from app.models.crm import Customer
 from app.models.security import SystemUser
 from app.schemas.auth import CustomerRegister, LoginRequest, TokenResponse, UserResponse
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+router = APIRouter(tags=["auth"])
 
 
 def _user_response(id: int, name: str, email: str, role: str) -> UserResponse:
@@ -60,8 +60,8 @@ def register(payload: CustomerRegister, session: Session = Depends(get_db)):
 # ── POST /auth/login ───────────────────────────────────────────────────────────
 
 
-@router.post("/login", response_model=TokenResponse)
-def login(payload: LoginRequest, session: Session = Depends(get_db)):
+@router.post("/login")
+def login(payload: LoginRequest, session: Session = Depends(get_db)) -> TokenResponse:
     """
     Unified login. Checks system_user (admin/employee) first, then customer.
     Returns JWT access + refresh tokens.
@@ -118,7 +118,7 @@ def logout(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     redis_client: redis.Redis = Depends(get_redis_client),
     current_user: UserResponse = Depends(get_current_user),
-):
+) -> dict:
     """
     Logout using Redis Blacklist. Extracts `jti` and sets it in Redis with the remaining TTL.
     """

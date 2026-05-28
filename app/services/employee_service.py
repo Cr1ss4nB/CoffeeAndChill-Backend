@@ -14,6 +14,10 @@ from app.core.security import hash_password
 from app.models.security import SystemUser, Role
 
 
+# Reusable messages
+EMPLOYEE_NOT_FOUND = "Empleado no encontrado"
+
+
 def create_employee(
     session: Session,
     data: Dict[str, Any]
@@ -47,7 +51,7 @@ def create_employee(
     if existing:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Email already registered"
+            detail="El correo electrónico ya está registrado"
         )
     
     # Validate and get role
@@ -57,7 +61,7 @@ def create_employee(
     if role_name not in valid_roles:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid role. Must be one of: {', '.join(valid_roles)}"
+            detail=f"Rol inválido. Debe ser uno de: {', '.join(valid_roles)}"
         )
     
     role_obj = session.exec(
@@ -111,7 +115,7 @@ def update_employee(
     if not employee:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Employee not found"
+            detail=EMPLOYEE_NOT_FOUND
         )
     
     # Check email uniqueness if updating email
@@ -122,7 +126,7 @@ def update_employee(
         if existing:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="Email already registered"
+                detail="El correo electrónico ya está registrado"
             )
         employee.email = data["email"]
     
@@ -133,6 +137,18 @@ def update_employee(
     if "phone" in data:
         employee.phone = data["phone"]
     
+    if "role" in data:
+        role_name = data["role"]
+        role = session.exec(
+            select(Role).where(Role.role_name == role_name)
+        ).first()
+        if not role:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Rol no encontrado"
+            )
+        employee.role_id = role.role_id
+
     if "password" in data:
         employee.password_hash = hash_password(data["password"])
     
@@ -165,7 +181,7 @@ def get_employee_with_role(
     if not employee:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Employee not found"
+            detail=EMPLOYEE_NOT_FOUND
         )
     
     return {
@@ -241,7 +257,7 @@ def activate_employee(
     if not employee:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Employee not found"
+            detail=EMPLOYEE_NOT_FOUND
         )
     
     employee.is_active = True
@@ -274,7 +290,7 @@ def deactivate_employee(
     if not employee:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Employee not found"
+            detail=EMPLOYEE_NOT_FOUND
         )
     
     employee.is_active = False
@@ -309,7 +325,7 @@ def assign_role(
     if not employee:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Employee not found"
+            detail=EMPLOYEE_NOT_FOUND
         )
     
     role = session.get(Role, role_id)
@@ -317,7 +333,7 @@ def assign_role(
     if not role:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Role not found"
+            detail="Rol no encontrado"
         )
     
     employee.role_id = role_id

@@ -2,7 +2,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import List, Optional
 
-from sqlalchemy.orm import Mapped
+from sqlalchemy.orm import Mapped, relationship
 from sqlmodel import Field, Relationship, SQLModel
 
 from app.core.time import utc_now
@@ -25,7 +25,9 @@ class Order(SQLModel, table=True):
     order_date: datetime = Field(default_factory=utc_now)
     notes: Optional[str] = Field(default=None)
 
-    items: Mapped[List["OrderItem"]] = Relationship(back_populates="order")
+    items: Mapped[List["OrderItem"]] = Relationship(
+        sa_relationship=relationship("OrderItem", back_populates="order")
+    )
 
 
 class OrderItem(SQLModel, table=True):
@@ -41,11 +43,13 @@ class OrderItem(SQLModel, table=True):
     unit_price: float = Field(decimal_places=2)
     subtotal: float = Field(default_factory=lambda: 0.0, sa_column_kwargs={"server_default": "0", "nullable": False}, decimal_places=2)
 
-    item_type: str  # PRODUCT|WORKSHOP
+    item_type: str = Field(default="PRODUCT")  # PRODUCT|WORKSHOP
     status: str = Field(default="PENDING")
     special_instructions: Optional[str] = Field(default=None)
 
-    order: Mapped[Order] = Relationship(back_populates="items")
+    order: Mapped[Optional["Order"]] = Relationship(
+        sa_relationship=relationship("Order", back_populates="items")
+    )
 
 
 class Payment(SQLModel, table=True):

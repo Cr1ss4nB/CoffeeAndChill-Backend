@@ -17,7 +17,7 @@ from app.models.security import SystemUser
 from app.schemas.order import CheckoutRequest, OrderItemCreate, OrderItemResponse, OrderResponse
 from app.services.availability import compute_sellable_snapshot
 
-router = APIRouter(prefix="/public", tags=["public"])
+router = APIRouter(tags=["public"])
 
 
 class TableInfoResponse(BaseModel):

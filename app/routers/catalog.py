@@ -1,6 +1,5 @@
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy.orm import selectinload
 from sqlalchemy import true
 from sqlmodel import Session, select
 
@@ -13,7 +12,7 @@ from app.schemas.catalog import (
     ProductResponse,
 )
 
-router = APIRouter(prefix="/catalog", tags=["catalog"])
+router = APIRouter(tags=["catalog"])
 
 
 @router.get("/categories", response_model=List[CategoryResponse])
@@ -55,7 +54,6 @@ def get_product(
     stmt = (
         select(Product)
         .where(Product.product_id == product_id)
-        .options(selectinload(Product.category))
     )
 
     product = session.exec(stmt).first()
@@ -65,7 +63,8 @@ def get_product(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Producto no encontrado",
         )
-    if not product.category:
+    category = session.get(Category, product.category_id)
+    if not category:
         raise HTTPException(
             status_code=500,
             detail="Producto sin categoría cargada",
@@ -73,5 +72,5 @@ def get_product(
     pr = product_to_catalog_response(session, product)
     return ProductDetailResponse(
         **pr.model_dump(),
-        category=CategoryResponse.model_validate(product.category),
+        category=CategoryResponse.model_validate(category),
     )

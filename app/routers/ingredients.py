@@ -24,7 +24,7 @@ from app.services.inventory_service import (
 )
 from app.services.availability import get_ingredient_current_stock
 
-router = APIRouter(prefix="/ingredients", tags=["Ingredients"])
+router = APIRouter(tags=["Ingredients"])
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────

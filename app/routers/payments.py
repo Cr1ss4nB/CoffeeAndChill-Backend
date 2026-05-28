@@ -2,17 +2,16 @@ from datetime import date, datetime
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from app.core.database import get_db
 from app.core.dependencies import require_role
 from app.models.infrastructure import TableSpot
-from app.models.operations import Order
+from app.models.operations import Order, Payment
 from app.models.security import SystemUser
 from app.schemas.auth import UserResponse
-from app.services.payment_service import get_payment_summary
 
-router = APIRouter(prefix="/payments", tags=["payments"])
+router = APIRouter(tags=["payments"])
 
 
 @router.get("")
@@ -32,24 +31,41 @@ def get_payments(
     else:
         filter_date = date.today()
 
-    # Get summary for the date
-    summary_data = get_payment_summary(session, start_date=filter_date, end_date=filter_date)
-    
-    # Enrich payment details with order and table information
+    start_dt = datetime.combine(filter_date, datetime.min.time())
+    end_dt = datetime.combine(filter_date, datetime.max.time())
+
+    payments = session.exec(
+        select(Payment)
+        .where(Payment.payment_date >= start_dt, Payment.payment_date <= end_dt)
+        .order_by(Payment.payment_date.desc())
+    ).all()
+
     result = []
-    for payment_method in summary_data["by_method"].values():
-        # Note: This is a simplified response; you may want to get individual payments
-        # if you need full payment details with table numbers
-        pass
-    
-    # Return the summary data structure
+    for payment in payments[offset:offset + limit]:
+        order = session.get(Order, payment.order_id)
+        table = session.get(TableSpot, order.table_id) if order and order.table_id else None
+        result.append({
+            "payment_id": payment.payment_id,
+            "order_id": payment.order_id,
+            "amount": payment.amount,
+            "tip_amount": payment.tip_amount,
+            "payment_method": payment.payment_method,
+            "status": payment.status,
+            "transaction_reference": payment.transaction_reference,
+            "payment_date": payment.payment_date.isoformat() if payment.payment_date else None,
+            "table_number": table.table_number if table else None,
+            "table_code": table.table_code if table else None,
+        })
+
+    total_sales = round(sum(p.amount for p in payments), 2)
+    total_tips = round(sum(p.tip_amount for p in payments), 2)
     return {
         "payments": result,
         "summary": {
-            "count": summary_data["summary"]["total_transactions"],
-            "total_ventas": summary_data["summary"]["total_sales"],
-            "total_propinas": summary_data["summary"]["total_tips"],
-            "total_con_propinas": summary_data["summary"]["total_with_tips"],
+            "count": len(payments),
+            "total_ventas": total_sales,
+            "total_propinas": total_tips,
+            "total_con_propinas": round(total_sales + total_tips, 2),
         },
         "date": filter_date.isoformat()
     }

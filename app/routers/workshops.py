@@ -2,8 +2,7 @@ from datetime import datetime
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlmodel import Session
-from sqlalchemy.orm import selectinload
+from sqlmodel import Session, select
 
 from app.core.database import get_db
 from app.core.dependencies import require_permission
@@ -18,34 +17,36 @@ from app.services.workshop_service import (
     get_workshop_details,
 )
 
-router = APIRouter(prefix="/workshops", tags=["Workshops"])
+WORKSHOP_NOT_FOUND = "Taller no encontrado"
+
+router = APIRouter(tags=["Workshops"])
 
 
 @router.get("", response_model=List[dict])
 def get_workshops(session: Session = Depends(get_db)):
     """Obtiene el catálogo de talleres con formato compatible para el frontend."""
-    stmt = (
-        select(Workshop)
-        .where(Workshop.is_active == True)
-        .options(selectinload(Workshop.schedules))
-    )
-    workshops = session.exec(stmt).all()
+    workshops = session.exec(
+        select(Workshop).where(Workshop.is_active == True)
+    ).all()
     
     result = []
     for w in workshops:
+        schedules = session.exec(
+            select(WorkshopSchedule).where(WorkshopSchedule.workshop_id == w.workshop_id)
+        ).all()
         w_dict = w.model_dump()
         w_dict["id"] = str(w.workshop_id)
         w_dict["workshop_id"] = w.workshop_id
         
         # Calcular spots para el frontend
-        total_available = sum(s.available_slots for s in w.schedules) if w.schedules else 0
+        total_available = sum(s.available_slots for s in schedules) if schedules else 0
         w_dict["totalSpots"] = w.max_capacity
         w_dict["reservedSpots"] = max(0, w.max_capacity - total_available)
         
         # Asegurar que el mapeador del frontend (workshops.service.ts) no falle
         schedules_list = []
-        if w.schedules:
-            for s in w.schedules:
+        if schedules:
+            for s in schedules:
                 s_dict = s.model_dump()
                 s_dict["id"] = str(s.schedule_id)
                 # Forzar que el campo se llame exactamente como espera el frontend
@@ -94,7 +95,7 @@ def create_workshop_endpoint(
         }
         
         workshop = service_create_workshop(session, data)
-        
+
         # Add schedules if provided
         if workshop_data.schedules:
             for sched in workshop_data.schedules:
@@ -109,7 +110,14 @@ def create_workshop_endpoint(
                 session.add(schedule)
             session.commit()
 
-        return WorkshopResponse.model_validate(workshop)
+        # Re-fetch with schedules loaded to include schedule IDs in response
+        workshop_obj = session.get(Workshop, workshop.workshop_id)
+        schedules = session.exec(
+            select(WorkshopSchedule).where(WorkshopSchedule.workshop_id == workshop.workshop_id)
+        ).all()
+        response_data = workshop_obj.model_dump() if workshop_obj else {}
+        response_data["schedules"] = [schedule.model_dump() for schedule in schedules]
+        return WorkshopResponse.model_validate(response_data)
     except HTTPException:
         raise
     except Exception as e:
@@ -123,7 +131,7 @@ def create_workshop_endpoint(
     return session.get(Workshop, workshop.workshop_id)
 
 
-@router.put("/{workshop_id}", response_model=WorkshopResponse)
+@router.put("/{workshop_id}", response_model=WorkshopResponse, responses={404: {"description": WORKSHOP_NOT_FOUND}})
 def update_workshop(
     workshop_id: int,
     workshop_data: WorkshopUpdate,
@@ -132,7 +140,7 @@ def update_workshop(
 ):
     workshop = session.get(Workshop, workshop_id)
     if not workshop:
-        raise HTTPException(status_code=404, detail="Taller no encontrado")
+        raise HTTPException(status_code=404, detail=WORKSHOP_NOT_FOUND)
 
     for key, value in workshop_data.model_dump(exclude_unset=True).items():
         setattr(workshop, key, value)
@@ -141,15 +149,10 @@ def update_workshop(
     session.commit()
     session.refresh(workshop)
 
-    stmt = (
-        select(Workshop)
-        .where(Workshop.workshop_id == workshop_id)
-        .options(selectinload(Workshop.schedules))
-    )
-    return session.exec(stmt).first()
+    return session.get(Workshop, workshop_id)
 
 
-@router.delete("/{workshop_id}")
+@router.delete("/{workshop_id}", responses={404: {"description": WORKSHOP_NOT_FOUND}})
 def delete_workshop(
     workshop_id: int,
     session: Session = Depends(get_db),
@@ -158,7 +161,7 @@ def delete_workshop(
     """Borrado lógico de un taller."""
     workshop = session.get(Workshop, workshop_id)
     if not workshop:
-        raise HTTPException(status_code=404, detail="Taller no encontrado")
+        raise HTTPException(status_code=404, detail=WORKSHOP_NOT_FOUND)
 
     workshop.is_active = False
     session.add(workshop)
@@ -195,7 +198,7 @@ def get_workshop_reservations(
     return reservations
 
 
-@router.post("/{workshop_id}/reservations")
+@router.post("/{workshop_id}/reservations", responses={404: {"description": WORKSHOP_NOT_FOUND}})
 def create_workshop_reservation(
     workshop_id: int,
     reservation_data: dict,  # full_name, email, phone, schedule_id, attendees
@@ -210,6 +213,10 @@ def create_workshop_reservation(
     schedule = session.get(WorkshopSchedule, schedule_id)
     if not schedule or schedule.workshop_id != workshop_id:
         raise HTTPException(status_code=404, detail="Horario no encontrado para este taller")
+
+    workshop = session.get(Workshop, workshop_id)
+    if not workshop:
+        raise HTTPException(status_code=404, detail=WORKSHOP_NOT_FOUND)
 
     attendees = reservation_data.get("attendees", 1)
     if schedule.available_slots < attendees:
@@ -237,7 +244,7 @@ def create_workshop_reservation(
         schedule_id=schedule.schedule_id,
         system_user_id=1,
         quantity_slots=attendees,
-        total_price=float(schedule.workshop.price) * attendees,
+        total_price=float(workshop.price) * attendees,
         status="CONFIRMED",
     )
 

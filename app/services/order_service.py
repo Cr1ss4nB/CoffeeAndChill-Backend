@@ -39,7 +39,7 @@ def process_checkout(
         product = session.get(Product, product_id)
         if not product or product.status != "ACTIVE":
             raise HTTPException(
-                status_code=404,
+                status_code=400,
                 detail=f"Producto id {product_id} no existe o no está activo",
             )
         if total_q < 1:

@@ -2,7 +2,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import List, Optional
 
-from sqlalchemy.orm import Mapped
+from sqlalchemy.orm import Mapped, relationship
 from sqlmodel import Field, Relationship, SQLModel
 
 from app.core.time import utc_now
@@ -14,7 +14,9 @@ class Role(SQLModel, table=True):
     permissions: Optional[str] = Field(default=None)  # stored as JSON string
     created_at: datetime = Field(default_factory=utc_now)
 
-    users: Mapped[List["SystemUser"]] = Relationship(back_populates="role")
+    users: Mapped[List["SystemUser"]] = Relationship(
+        sa_relationship=relationship("SystemUser", back_populates="role")
+    )
 
 
 class SystemUser(SQLModel, table=True):
@@ -28,4 +30,6 @@ class SystemUser(SQLModel, table=True):
     created_at: datetime = Field(default_factory=utc_now)
     last_login: Optional[datetime] = Field(default=None)
 
-    role: Mapped[Optional[Role]] = Relationship(back_populates="users")
+    role: Mapped[Optional["Role"]] = Relationship(
+        sa_relationship=relationship("Role", back_populates="users")
+    )

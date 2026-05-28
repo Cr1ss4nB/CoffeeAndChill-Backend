@@ -20,9 +20,10 @@ from app.services.employee_service import (
     list_employees as service_list_employees,
     activate_employee,
     deactivate_employee,
+    EMPLOYEE_NOT_FOUND,
 )
 
-router = APIRouter(prefix="/admin/employees", tags=["Employees"])
+router = APIRouter(tags=["Employees"])
 
 
 @router.get("", response_model=List[EmployeeResponse])
@@ -86,6 +87,8 @@ def update_employee_endpoint(
         update_dict["full_name"] = employee_data.full_name
     if employee_data.email is not None:
         update_dict["email"] = employee_data.email
+    if employee_data.role is not None:
+        update_dict["role"] = employee_data.role
     if employee_data.phone is not None:
         update_dict["phone"] = employee_data.phone
     
@@ -114,13 +117,13 @@ def update_employee_status(
     if not employee:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Employee not found",
+            detail=EMPLOYEE_NOT_FOUND,
         )
     
     if employee.system_user_id == user.id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Cannot deactivate your own account",
+            detail="No puedes desactivar tu propia cuenta",
         )
     
     # Use service to update status

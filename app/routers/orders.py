@@ -17,7 +17,7 @@ from app.models.operations import Order
 from app.models.infrastructure import TableSpot
 import redis as sync_redis
 
-router = APIRouter(prefix="/orders", tags=["orders"])
+router = APIRouter(tags=["orders"])
 
 
 def _enrich_orders(orders: list, session: Session) -> List[OrderResponse]:

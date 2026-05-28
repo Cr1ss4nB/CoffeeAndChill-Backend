@@ -1,9 +1,10 @@
-from __future__ import annotations
-from datetime import date, datetime, time
-from typing import List, Optional
 
-from sqlalchemy.orm import Mapped
-from sqlmodel import Field, Relationship, SQLModel
+from __future__ import annotations
+
+from datetime import date, datetime, time
+from typing import Optional
+
+from sqlmodel import Field, SQLModel
 
 from app.core.time import utc_now
 
@@ -14,9 +15,6 @@ class Category(SQLModel, table=True):
     type: str = Field(max_length=20)  # PRODUCT|WORKSHOP
     description: Optional[str] = Field(default=None)
     is_active: bool = Field(default=True)
-
-    products: Mapped[List["Product"]] = Relationship(back_populates="category")
-    workshops: Mapped[List["Workshop"]] = Relationship(back_populates="category")
 
 
 class Product(SQLModel, table=True):
@@ -34,18 +32,6 @@ class Product(SQLModel, table=True):
     image_url: Optional[str] = Field(default=None)
     created_at: datetime = Field(default_factory=utc_now)
 
-    category: Mapped[Category] = Relationship(back_populates="products")
-    # This relationship represents the ingredients needed for THIS product
-    recipe_items: Mapped[List["RecipeItem"]] = Relationship(
-        back_populates="product", 
-        sa_relationship_kwargs={"foreign_keys": "[RecipeItem.product_id]"}
-    )
-    # This relationship represents where THIS product is used as an ingredient
-    used_in_recipes: Mapped[List["RecipeItem"]] = Relationship(
-        back_populates="ingredient",
-        sa_relationship_kwargs={"foreign_keys": "[RecipeItem.ingredient_id]"}
-    )
-
 
 class RecipeItem(SQLModel, table=True):
     recipe_item_id: int | None = Field(default=None, primary_key=True)
@@ -54,15 +40,6 @@ class RecipeItem(SQLModel, table=True):
     ingredient_id: int = Field(foreign_key="product.product_id")
     quantity_needed: float = Field(default=1.0)
     unit: str = Field(default="ud", max_length=10)
-
-    product: Mapped[Product] = Relationship(
-        back_populates="recipe_items", 
-        sa_relationship_kwargs={"foreign_keys": "[RecipeItem.product_id]"}
-    )
-    ingredient: Mapped[Product] = Relationship(
-        back_populates="used_in_recipes",
-        sa_relationship_kwargs={"foreign_keys": "[RecipeItem.ingredient_id]"}
-    )
 
 
 class Workshop(SQLModel, table=True):
@@ -76,9 +53,6 @@ class Workshop(SQLModel, table=True):
     instructor_name: Optional[str] = Field(default=None, max_length=50)
     is_active: bool = Field(default=True)
 
-    category: Mapped[Category] = Relationship(back_populates="workshops")
-    schedules: Mapped[List["WorkshopSchedule"]] = Relationship(back_populates="workshop")
-
 
 class WorkshopSchedule(SQLModel, table=True):
     schedule_id: int | None = Field(default=None, primary_key=True)
@@ -88,5 +62,3 @@ class WorkshopSchedule(SQLModel, table=True):
     end_time: time
     available_slots: int
     status: str = Field(default="OPEN")
-
-    workshop: Mapped[Workshop] = Relationship(back_populates="schedules")

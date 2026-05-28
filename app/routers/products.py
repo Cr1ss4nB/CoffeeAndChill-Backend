@@ -19,7 +19,7 @@ IMAGES_DIR = os.path.join(settings.MEDIA_DIR, "images")
 _ALLOWED_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
 _MAX_BYTES = 5 * 1024 * 1024  # 5 MB
 
-router = APIRouter(prefix="/products", tags=["Products"])
+router = APIRouter(tags=["Products"])
 
 
 @router.post("/upload-image")

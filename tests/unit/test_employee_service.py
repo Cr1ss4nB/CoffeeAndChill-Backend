@@ -284,10 +284,8 @@ class TestAssignRole:
         }
         emp = create_employee(session, data)
         
-        # Get the cashier role
-        cashier_role = session.exec(
-            session.query(Role).filter(Role.role_name == "cashier")
-        ).first()
+        # Get the cashier role from the fixture
+        cashier_role = setup_roles["cashier"]
         
         assigned = assign_role(session, emp.system_user_id, cashier_role.role_id)
         

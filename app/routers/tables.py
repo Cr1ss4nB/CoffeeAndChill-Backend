@@ -25,7 +25,7 @@ class TableCloseRequest(BaseModel):
     payment_method: str  # CASH|CARD|TRANSFER|WALLET
     tip_amount: float = 0.0
 
-router = APIRouter(prefix="/tables", tags=["Tables"])
+router = APIRouter(tags=["Tables"])
 
 
 @router.get("", response_model=List[TableResponse])
