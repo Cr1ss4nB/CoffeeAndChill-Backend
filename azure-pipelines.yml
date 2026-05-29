@@ -1,8 +1,3 @@
-# Starter pipeline
-# Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
-
 trigger:
   - main
   - develop
@@ -36,126 +31,181 @@ variables:
   frontendPath: "CoffeeAndChill-Frontend"
 
 stages:
-  # ---------------- TEST & SONARQUBE ----------------
-  - stage: TestAndSonar
-    displayName: "Execute Tests and Sonar Analysis"
-    jobs:
-      - job: TestBackend
-        displayName: "Backend: Pytest + Sonar"
-        steps:
-          - checkout: self
-            path: $(backendPath)
-            fetchDepth: 0
 
-          - task: UsePythonVersion@0
-            inputs:
-              versionSpec: "3.11"
+# =========================================================
+# TESTS + SONARCLOUD
+# =========================================================
+- stage: TestAndSonar
+  displayName: "Execute Tests and Sonar Analysis"
 
-          - script: |
-              cd $(Pipeline.Workspace)/$(backendPath)
-              # Ensure test media dir exists and export to env so tests write to workspace
-              export MEDIA_DIR=$(Pipeline.Workspace)/$(backendPath)/tests/media
-              mkdir -p "$MEDIA_DIR"
+  jobs:
 
-              # Set deterministic demo credentials for CI (override in pipeline variables if needed)
-              export DEMO_ADMIN_PASSWORD=${DEMO_ADMIN_PASSWORD:-adminpass}
-              export DEMO_CUSTOMER_PASSWORD=${DEMO_CUSTOMER_PASSWORD:-customerpass}
+    # =====================================================
+    # BACKEND
+    # =====================================================
+    - job: TestBackend
+      displayName: "Backend: Pytest + Sonar"
 
-              pip install -r requirements.txt
-              pip install fakeredis pytest pytest-cov
-              pytest --cov=. --cov-report=xml --cov-fail-under=70
-            displayName: "Run pytest with XML coverage"
+      steps:
 
-          - task: SonarCloudPrepare@3
-            inputs:
-              SonarCloud: "sonarcloud-connection"
-              organization: "coffee-and-chill-sonar"
-              scannerMode: "CLI"
-              configMode: "manual"
-              cliProjectKey: "coffee-chill-backend"
-              cliProjectName: "Coffee and Chill Backend"
-              cliSources: "$(Pipeline.Workspace)/$(backendPath)"
-              extraProperties: |
-                sonar.exclusions=**/tests/**,**/venv/**
-                sonar.python.coverage.reportPaths=$(Pipeline.Workspace)/$(backendPath)/coverage.xml
+        - checkout: self
+          path: $(backendPath)
+          fetchDepth: 0
 
-          - task: SonarCloudAnalyze@3
-            displayName: "Run SonarCloud Analysis"
+        - task: UsePythonVersion@0
+          inputs:
+            versionSpec: "3.11"
 
-      - job: TestFrontend
-        displayName: "Frontend: Vitest + Sonar"
-        steps:
-          - checkout: frontend
-            path: $(frontendPath)
-            fetchDepth: 0
+        - task: SonarCloudPrepare@3
+          inputs:
+            SonarCloud: "sonarcloud-connection"
+            organization: "coffee-and-chill-sonar"
+            scannerMode: "CLI"
+            configMode: "manual"
+            cliProjectKey: "coffee-chill-backend"
+            cliProjectName: "Coffee and Chill Backend"
+            cliSources: "$(Pipeline.Workspace)/$(backendPath)"
+            extraProperties: |
+              sonar.exclusions=**/tests/**,**/venv/**
+              sonar.python.coverage.reportPaths=coverage.xml
 
-          - task: NodeTool@0
-            inputs:
-              versionSpec: "20.x"
+        - script: |
+            cd $(Pipeline.Workspace)/$(backendPath)
 
-          - task: SonarCloudPrepare@3
-            inputs:
-              SonarCloud: "sonarcloud-connection"
-              organization: "coffee-and-chill-sonar"
-              scannerMode: "CLI"
-              configMode: "manual"
-              cliProjectKey: "coffee-chill-frontend"
-              cliProjectName: "Coffee and Chill Frontend"
-              cliSources: "$(Pipeline.Workspace)/$(frontendPath)/src"
-              extraProperties: |
-                sonar.tests=$(Pipeline.Workspace)/$(frontendPath)/src
-                sonar.test.inclusions=**/*.test.tsx,**/*.test.ts,**/*.spec.tsx,**/*.spec.ts
-                sonar.exclusions=**/node_modules/**,**/dist/**
-                sonar.javascript.lcov.reportPaths=$(Pipeline.Workspace)/$(frontendPath)/coverage/lcov.info
+            echo "Current directory:"
+            pwd
 
-          - script: |
-              cd $(Pipeline.Workspace)/$(frontendPath)
-              npm ci
-              npx vitest run --coverage --reporter=verbose
-            displayName: "Run vitest and generate LCOV"
+            export MEDIA_DIR=$(Pipeline.Workspace)/$(backendPath)/tests/media
+            mkdir -p "$MEDIA_DIR"
 
-          - task: SonarCloudAnalyze@3
-            displayName: "Run SonarCloud Analysis"
+            export DEMO_ADMIN_PASSWORD=${DEMO_ADMIN_PASSWORD:-adminpass}
+            export DEMO_CUSTOMER_PASSWORD=${DEMO_CUSTOMER_PASSWORD:-customerpass}
 
-  # ---------------- BUILD ----------------
-  - stage: Build
-    dependsOn: TestAndSonar
-    jobs:
-      - job: BuildImages
-        steps:
-          - checkout: self
-            path: $(backendPath)
+            pip install -r requirements.txt
+            pip install fakeredis pytest pytest-cov
 
-          - checkout: frontend
-            path: $(frontendPath)
+            pytest --cov=. --cov-report=xml --cov-fail-under=70
 
-          - script: |
-              docker build -t $(dockerHubRepo)/$(backendImageName):latest \
-                           -t $(dockerHubRepo)/$(backendImageName):$(Build.BuildId) \
-                           $(Pipeline.Workspace)/$(backendPath)
+            echo "=============================="
+            echo "Generated files:"
+            ls -la
 
-              docker build -t $(dockerHubRepo)/$(frontendImageName):latest \
-                           -t $(dockerHubRepo)/$(frontendImageName):$(Build.BuildId) \
-                           $(Pipeline.Workspace)/$(frontendPath)
-            displayName: "Build Docker images"
+            echo "=============================="
+            echo "Checking coverage.xml"
+            test -f coverage.xml && echo "coverage.xml exists"
 
-  # ---------------- PUSH ----------------
-  - stage: Push
-    dependsOn: Build
-    condition: and(succeeded(), in(variables['Build.SourceBranch'], 'refs/heads/main', 'refs/heads/develop'))
-    jobs:
-      - job: PushImages
-        steps:
-          - task: Docker@2
-            displayName: "Login to Docker Hub"
-            inputs:
-              command: "login"
-              containerRegistry: "dockerhub-conn"
+          displayName: "Run pytest with XML coverage"
 
-          - script: |
-              docker push $(dockerHubRepo)/$(backendImageName):latest
-              docker push $(dockerHubRepo)/$(backendImageName):$(Build.BuildId)
+        - task: SonarCloudAnalyze@3
+          displayName: "Run SonarCloud Analysis"
 
-              docker push $(dockerHubRepo)/$(frontendImageName):latest
-              docker push $(dockerHubRepo)/$(frontendImageName):$(Build.BuildId)
-            displayName: "Push images"
+    # =====================================================
+    # FRONTEND
+    # =====================================================
+    - job: TestFrontend
+      displayName: "Frontend: Vitest + Sonar"
+
+      steps:
+
+        - checkout: frontend
+          path: $(frontendPath)
+          fetchDepth: 0
+
+        - task: NodeTool@0
+          inputs:
+            versionSpec: "20.x"
+
+        - task: SonarCloudPrepare@3
+          inputs:
+            SonarCloud: "sonarcloud-connection"
+            organization: "coffee-and-chill-sonar"
+            scannerMode: "CLI"
+            configMode: "manual"
+            cliProjectKey: "coffee-chill-frontend"
+            cliProjectName: "Coffee and Chill Frontend"
+            cliSources: "$(Pipeline.Workspace)/$(frontendPath)/src"
+            extraProperties: |
+              sonar.tests=$(Pipeline.Workspace)/$(frontendPath)/src
+              sonar.test.inclusions=**/*.test.tsx,**/*.test.ts,**/*.spec.tsx,**/*.spec.ts
+              sonar.exclusions=**/node_modules/**,**/dist/**
+              sonar.javascript.lcov.reportPaths=coverage/lcov.info
+
+        - script: |
+            cd $(Pipeline.Workspace)/$(frontendPath)
+
+            echo "Current directory:"
+            pwd
+
+            npm ci
+
+            npx vitest run --coverage --coverage.reporter=lcov --reporter=verbose
+
+            echo "=============================="
+            echo "Coverage directory contents:"
+            find coverage -type f
+
+            echo "=============================="
+            echo "Checking lcov.info"
+            test -f coverage/lcov.info && echo "lcov.info exists"
+
+          displayName: "Run vitest and generate LCOV"
+
+        - task: SonarCloudAnalyze@3
+          displayName: "Run SonarCloud Analysis"
+
+# =========================================================
+# BUILD
+# =========================================================
+- stage: Build
+  dependsOn: TestAndSonar
+
+  jobs:
+
+    - job: BuildImages
+
+      steps:
+
+        - checkout: self
+          path: $(backendPath)
+
+        - checkout: frontend
+          path: $(frontendPath)
+
+        - script: |
+            docker build -t $(dockerHubRepo)/$(backendImageName):latest \
+                         -t $(dockerHubRepo)/$(backendImageName):$(Build.BuildId) \
+                         $(Pipeline.Workspace)/$(backendPath)
+
+            docker build -t $(dockerHubRepo)/$(frontendImageName):latest \
+                         -t $(dockerHubRepo)/$(frontendImageName):$(Build.BuildId) \
+                         $(Pipeline.Workspace)/$(frontendPath)
+
+          displayName: "Build Docker images"
+
+# =========================================================
+# PUSH
+# =========================================================
+- stage: Push
+  dependsOn: Build
+  condition: and(succeeded(), in(variables['Build.SourceBranch'], 'refs/heads/main', 'refs/heads/develop'))
+
+  jobs:
+
+    - job: PushImages
+
+      steps:
+
+        - task: Docker@2
+          displayName: "Login to Docker Hub"
+          inputs:
+            command: "login"
+            containerRegistry: "dockerhub-conn"
+
+        - script: |
+            docker push $(dockerHubRepo)/$(backendImageName):latest
+            docker push $(dockerHubRepo)/$(backendImageName):$(Build.BuildId)
+
+            docker push $(dockerHubRepo)/$(frontendImageName):latest
+            docker push $(dockerHubRepo)/$(frontendImageName):$(Build.BuildId)
+
+          displayName: "Push images"
