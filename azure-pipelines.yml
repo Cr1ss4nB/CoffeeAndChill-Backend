@@ -68,7 +68,6 @@ stages:
 
             extraProperties: |
               sonar.exclusions=**/tests/**,**/venv/**,**/seeders/**,**/fixtures/**,**/mocks/**
-              sonar.coverage.exclusions=**/tests/**,**/seeders/**,**/fixtures/**,**/mocks/**
               sonar.python.coverage.reportPaths=coverage.xml
 
         - script: |
@@ -131,7 +130,6 @@ stages:
               sonar.tests=src
               sonar.test.inclusions=**/*.test.tsx,**/*.test.ts,**/*.spec.tsx,**/*.spec.ts
               sonar.exclusions=**/node_modules/**,**/dist/**
-              sonar.coverage.exclusions=**/*.test.tsx,**/*.test.ts,**/*.spec.tsx,**/*.spec.ts
               sonar.javascript.lcov.reportPaths=coverage/lcov.info
 
         - script: |
