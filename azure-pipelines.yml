@@ -65,8 +65,10 @@ stages:
             cliProjectKey: "coffee-chill-backend"
             cliProjectName: "Coffee and Chill Backend"
             cliSources: "$(Pipeline.Workspace)/$(backendPath)"
+
             extraProperties: |
-              sonar.exclusions=**/tests/**,**/venv/**
+              sonar.exclusions=**/tests/**,**/venv/**,**/seeders/**,**/fixtures/**,**/mocks/**
+              sonar.coverage.exclusions=**/tests/**,**/seeders/**,**/fixtures/**,**/mocks/**
               sonar.python.coverage.reportPaths=coverage.xml
 
         - script: |
@@ -123,11 +125,13 @@ stages:
             configMode: "manual"
             cliProjectKey: "coffee-chill-frontend"
             cliProjectName: "Coffee and Chill Frontend"
-            cliSources: "$(Pipeline.Workspace)/$(frontendPath)/src"
+            cliSources: "$(Pipeline.Workspace)/$(frontendPath)"
+
             extraProperties: |
-              sonar.tests=$(Pipeline.Workspace)/$(frontendPath)/src
+              sonar.tests=src
               sonar.test.inclusions=**/*.test.tsx,**/*.test.ts,**/*.spec.tsx,**/*.spec.ts
               sonar.exclusions=**/node_modules/**,**/dist/**
+              sonar.coverage.exclusions=**/*.test.tsx,**/*.test.ts,**/*.spec.tsx,**/*.spec.ts
               sonar.javascript.lcov.reportPaths=coverage/lcov.info
 
         - script: |
