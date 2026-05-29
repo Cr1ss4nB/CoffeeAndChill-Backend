@@ -36,6 +36,7 @@ app.include_router(products.router, prefix="/api/v1/admin/products", tags=["prod
 app.include_router(employees.router, prefix="/api/v1/admin/employees", tags=["employees"])
 app.include_router(employees.router, prefix="/admin/employees", tags=["employees"])
 app.include_router(tables.router, prefix="/api/v1/admin/tables", tags=["tables"])
+app.include_router(tables.router, prefix="/tables", tags=["tables"])
 app.include_router(orders.router, prefix="/api/v1/orders", tags=["orders"])
 app.include_router(orders.router, prefix="/orders", tags=["orders"])
 app.include_router(workshops.router, prefix="/api/v1/workshops", tags=["workshops"])
