@@ -67,7 +67,7 @@ stages:
             cliSources: "$(Pipeline.Workspace)/$(backendPath)"
             extraProperties: |
               sonar.exclusions=**/tests/**,**/venv/**
-              sonar.python.coverage.reportPaths=coverage.xml
+              sonar.python.coverage.reportPaths=$(Pipeline.Workspace)/$(backendPath)/coverage.xml
 
         - script: |
             cd $(Pipeline.Workspace)/$(backendPath)
@@ -125,10 +125,10 @@ stages:
             cliProjectName: "Coffee and Chill Frontend"
             cliSources: "$(Pipeline.Workspace)/$(frontendPath)/src"
             extraProperties: |
-              sonar.tests=$(Pipeline.Workspace)/$(frontendPath)/src
+              sonar.tests=src
               sonar.test.inclusions=**/*.test.tsx,**/*.test.ts,**/*.spec.tsx,**/*.spec.ts
               sonar.exclusions=**/node_modules/**,**/dist/**
-              sonar.javascript.lcov.reportPaths=coverage/lcov.info
+              sonar.javascript.lcov.reportPaths=$(Pipeline.Workspace)/$(frontendPath)/coverage/lcov.info
 
         - script: |
             cd $(Pipeline.Workspace)/$(frontendPath)
