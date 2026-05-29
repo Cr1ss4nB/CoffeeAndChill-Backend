@@ -13,15 +13,11 @@ from app.schemas.employees import (
     EmployeeStatusUpdate,
     EmployeeUpdate,
 )
-from app.services.employee_service import (
-    create_employee as service_create_employee,
-    update_employee as service_update_employee,
-    get_employee_with_role,
-    list_employees as service_list_employees,
-    activate_employee,
-    deactivate_employee,
-    EMPLOYEE_NOT_FOUND,
-)
+from app.services.employee_service import EMPLOYEE_NOT_FOUND, activate_employee
+from app.services.employee_service import create_employee as service_create_employee
+from app.services.employee_service import deactivate_employee, get_employee_with_role
+from app.services.employee_service import list_employees as service_list_employees
+from app.services.employee_service import update_employee as service_update_employee
 
 router = APIRouter(tags=["Employees"])
 
@@ -60,9 +56,9 @@ def create_employee_endpoint(
         "role": employee_data.role,
         "phone": employee_data.phone,
     }
-    
+
     employee = service_create_employee(session, data)
-    
+
     return EmployeeResponse(
         employee_id=employee.system_user_id,
         full_name=employee.full_name,
@@ -82,7 +78,7 @@ def update_employee_endpoint(
 ):
     """Update an existing employee."""
     update_dict = {}
-    
+
     if employee_data.full_name is not None:
         update_dict["full_name"] = employee_data.full_name
     if employee_data.email is not None:
@@ -91,9 +87,9 @@ def update_employee_endpoint(
         update_dict["role"] = employee_data.role
     if employee_data.phone is not None:
         update_dict["phone"] = employee_data.phone
-    
+
     employee = service_update_employee(session, employee_id, update_dict)
-    
+
     return EmployeeResponse(
         employee_id=employee.system_user_id,
         full_name=employee.full_name,
@@ -119,19 +115,19 @@ def update_employee_status(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=EMPLOYEE_NOT_FOUND,
         )
-    
+
     if employee.system_user_id == user.id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="No puedes desactivar tu propia cuenta",
         )
-    
+
     # Use service to update status
     if status_data.is_active:
         employee = activate_employee(session, employee_id)
     else:
         employee = deactivate_employee(session, employee_id)
-    
+
     return EmployeeResponse(
         employee_id=employee.system_user_id,
         full_name=employee.full_name,

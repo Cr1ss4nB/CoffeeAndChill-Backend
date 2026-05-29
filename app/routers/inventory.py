@@ -1,6 +1,8 @@
 from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlmodel import Session, func, select, case
+from sqlmodel import Session, case, func, select
+
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.dependencies import require_permission

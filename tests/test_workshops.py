@@ -2,11 +2,12 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session, select
 
+from app.core.security import hash_password
 from app.models.catalog import Category, Workshop, WorkshopSchedule
 from app.models.crm import Customer
 from app.models.operations import Order, OrderItem
-from app.models.security import SystemUser, Role
-from app.core.security import hash_password
+from app.models.security import Role, SystemUser
+
 
 # Helper to get auth tokens
 def _admin_token(client: TestClient) -> str:

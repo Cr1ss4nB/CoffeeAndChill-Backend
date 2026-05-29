@@ -6,16 +6,13 @@ from sqlmodel import Session, select
 
 from app.core.database import get_db
 from app.core.dependencies import require_permission
-from app.models.catalog import Workshop, WorkshopSchedule, Category
-from app.models.crm import WorkshopReservation, Customer
+from app.models.catalog import Category, Workshop, WorkshopSchedule
+from app.models.crm import Customer, WorkshopReservation
 from app.schemas.auth import UserResponse
 from app.schemas.workshops import WorkshopCreate, WorkshopResponse, WorkshopUpdate
-from app.services.workshop_service import (
-    create_workshop as service_create_workshop,
-    update_workshop as service_update_workshop,
-    get_available_workshops,
-    get_workshop_details,
-)
+from app.services.workshop_service import create_workshop as service_create_workshop
+from app.services.workshop_service import get_available_workshops, get_workshop_details
+from app.services.workshop_service import update_workshop as service_update_workshop
 
 WORKSHOP_NOT_FOUND = "Taller no encontrado"
 
@@ -28,7 +25,7 @@ def get_workshops(session: Session = Depends(get_db)):
     workshops = session.exec(
         select(Workshop).where(Workshop.is_active == True)
     ).all()
-    
+
     result = []
     for w in workshops:
         schedules = session.exec(
@@ -37,12 +34,12 @@ def get_workshops(session: Session = Depends(get_db)):
         w_dict = w.model_dump()
         w_dict["id"] = str(w.workshop_id)
         w_dict["workshop_id"] = w.workshop_id
-        
+
         # Calcular spots para el frontend
         total_available = sum(s.available_slots for s in schedules) if schedules else 0
         w_dict["totalSpots"] = w.max_capacity
         w_dict["reservedSpots"] = max(0, w.max_capacity - total_available)
-        
+
         # Asegurar que el mapeador del frontend (workshops.service.ts) no falle
         schedules_list = []
         if schedules:
@@ -93,7 +90,7 @@ def create_workshop_endpoint(
             "instructor_name": workshop_data.instructor_name,
             "is_active": workshop_data.is_active,
         }
-        
+
         workshop = service_create_workshop(session, data)
 
         # Add schedules if provided
@@ -183,7 +180,7 @@ def get_workshop_reservations(
         .where(WorkshopSchedule.workshop_id == workshop_id)
     )
     results = session.exec(stmt).all()
-    
+
     reservations = []
     for res, cust in results:
         reservations.append({

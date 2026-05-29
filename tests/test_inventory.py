@@ -1,8 +1,9 @@
 from fastapi.testclient import TestClient
 from sqlmodel import Session, select
-from tests.conftest import get_admin_headers
+
 from app.models.catalog import Category, Product
 from app.models.inventory import InventoryMovement
+from tests.conftest import get_admin_headers
 
 
 def test_get_inventory_empty(client: TestClient, test_data):

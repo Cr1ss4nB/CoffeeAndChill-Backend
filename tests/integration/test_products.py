@@ -1,12 +1,12 @@
 """Integration tests for app/routers/products.py."""
 import io
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 
 from app.models.catalog import Category, Product
-
 
 # ---------------------------------------------------------------------------
 # Helpers / fixtures

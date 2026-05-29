@@ -5,8 +5,8 @@ from fastapi import HTTPException
 from sqlmodel import Session, select
 
 from app.models.catalog import Product
+from app.models.inventory import IngredientStockMovement, InventoryMovement, ProductConsumption
 from app.models.operations import Order, OrderItem
-from app.models.inventory import InventoryMovement, IngredientStockMovement, ProductConsumption
 from app.models.security import SystemUser
 from app.schemas.auth import UserResponse
 from app.schemas.order import CheckoutRequest

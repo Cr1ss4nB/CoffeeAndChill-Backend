@@ -1,5 +1,5 @@
-from datetime import datetime, timezone
 import json
+from datetime import datetime, timezone
 
 import redis
 from fastapi import Depends, HTTPException, status

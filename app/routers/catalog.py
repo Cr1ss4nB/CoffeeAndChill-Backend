@@ -1,4 +1,5 @@
 from typing import List, Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import true
 from sqlmodel import Session, select
@@ -6,11 +7,7 @@ from sqlmodel import Session, select
 from app.core.database import get_db
 from app.models.catalog import Category, Product
 from app.routers.catalog_utils import product_to_catalog_response
-from app.schemas.catalog import (
-    CategoryResponse,
-    ProductDetailResponse,
-    ProductResponse,
-)
+from app.schemas.catalog import CategoryResponse, ProductDetailResponse, ProductResponse
 
 router = APIRouter(tags=["catalog"])
 
@@ -23,7 +20,7 @@ def get_categories(
     # Obtiene el listado de categorías del menú y talleres.
     stmt = select(Category)
     if active_only:
-        stmt = stmt.where(Category.is_active == true()) 
+        stmt = stmt.where(Category.is_active == true())
 
     categories = session.exec(stmt).all()
     return categories

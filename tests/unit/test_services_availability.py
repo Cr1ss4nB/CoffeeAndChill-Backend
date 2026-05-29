@@ -10,7 +10,6 @@ from app.services.availability import (
     should_record_product_inventory_movement,
 )
 
-
 # ---------------------------------------------------------------------------
 # should_decrement_product_stock
 # ---------------------------------------------------------------------------

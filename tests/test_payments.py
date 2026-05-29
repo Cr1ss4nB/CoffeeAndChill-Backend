@@ -1,13 +1,14 @@
 from datetime import datetime, timedelta
+
 from fastapi.testclient import TestClient
 from sqlmodel import Session, select
 
+from app.core.security import hash_password
 from app.models.catalog import Category, Product
 from app.models.crm import Customer
 from app.models.infrastructure import TableSpot
 from app.models.operations import Order, OrderItem, Payment
 from app.models.security import Role, SystemUser
-from app.core.security import hash_password
 from tests.conftest import get_admin_headers, get_customer_headers
 
 
