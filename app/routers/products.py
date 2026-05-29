@@ -1,12 +1,9 @@
-import os
-import uuid
 from typing import Optional
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi import status as http_status
 from sqlmodel import Session
 
-from app.core.config import settings
 from app.core.database import get_db
 from app.core.dependencies import require_permission, require_role
 from app.core.fulfillment import FulfillmentType
@@ -14,8 +11,8 @@ from app.models.catalog import Category, Product
 from app.routers.catalog_utils import product_to_catalog_response
 from app.schemas.auth import UserResponse
 from app.schemas.catalog import ProductCreate, ProductResponse, ProductStatusUpdate, ProductUpdate
+from app.services.image_storage import save_product_image
 
-IMAGES_DIR = os.path.join(settings.MEDIA_DIR, "images")
 _ALLOWED_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
 _MAX_BYTES = 5 * 1024 * 1024  # 5 MB
 
@@ -32,15 +29,12 @@ async def upload_product_image(
     content = await file.read()
     if len(content) > _MAX_BYTES:
         raise HTTPException(400, detail="La imagen no debe superar 5 MB")
-    raw_name = file.filename or "image"
-    ext = raw_name.rsplit(".", 1)[-1].lower() if "." in raw_name else "jpg"
-    if ext not in ("jpg", "jpeg", "png", "webp", "gif"):
-        ext = "jpg"
-    filename = f"{uuid.uuid4().hex}.{ext}"
-    os.makedirs(IMAGES_DIR, exist_ok=True)
-    with open(os.path.join(IMAGES_DIR, filename), "wb") as f:
-        f.write(content)
-    return {"image_url": f"/media/images/{filename}"}
+    image_url = save_product_image(
+        content=content,
+        original_filename=file.filename,
+        content_type=file.content_type,
+    )
+    return {"image_url": image_url}
 
 
 def _assert_fulfillment(s: str) -> str:
