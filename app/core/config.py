@@ -62,11 +62,25 @@ class Settings:
         ),
     ).split(",")
     MEDIA_DIR: str = os.getenv("MEDIA_DIR", _DEFAULT_MEDIA_DIR)
+    SUPABASE_URL: str = (os.getenv("SUPABASE_URL") or "").strip()
+    SUPABASE_SERVICE_ROLE_KEY: str = (os.getenv("SUPABASE_SERVICE_ROLE_KEY") or "").strip()
+    SUPABASE_BUCKET: str = os.getenv("SUPABASE_BUCKET", "product-images").strip()
+    SUPABASE_PRODUCTS_PREFIX: str = os.getenv("SUPABASE_PRODUCTS_PREFIX", "products").strip()
+    SUPABASE_STORAGE_STRICT: bool = os.getenv("SUPABASE_STORAGE_STRICT", "false").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
 
     def __init__(self) -> None:
         self.FRONTEND_ORIGINS = [
             origin.strip() for origin in self.FRONTEND_ORIGINS if origin.strip()
         ]
+
+    @property
+    def SUPABASE_STORAGE_ENABLED(self) -> bool:
+        return bool(self.SUPABASE_URL and self.SUPABASE_SERVICE_ROLE_KEY and self.SUPABASE_BUCKET)
 
 
 settings = Settings()
